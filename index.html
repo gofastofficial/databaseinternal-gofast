@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoFast Enterprise - System V9</title>
+    <title>GoFast Enterprise - System V9.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -134,20 +134,31 @@
         <div class="driver-header">
             <div class="login-logo" style="margin: 0; font-size: 1.5rem;">GoFast <span>Driver Portal</span></div>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <select id="dp-filter" onchange="renderDriverPortal()" class="btn-outline" style="padding: 0.5rem; font-weight: 600; border-radius: 8px;">
+                <select id="dp-filter" onchange="renderDriverPortal()" class="btn-outline" style="padding: 0.5rem; font-weight: 600; border-radius: 8px; background: var(--white);">
                     <option value="all">Semua Waktu</option>
                     <option value="today">Hari Ini</option>
                     <option value="this_month">Bulan Ini</option>
                 </select>
-                <button class="btn btn-outline btn-sm" style="border-color: var(--danger); color: var(--danger);" onclick="logout()">Keluar Sistem</button>
+                <button class="btn btn-outline btn-sm" style="border-color: var(--danger); color: var(--danger); background: var(--white);" onclick="logout()">Keluar Sistem</button>
             </div>
         </div>
         
         <div class="driver-content">
-            <div class="panel" style="background: var(--black); color: var(--white); border: none;">
+            <div class="panel" style="background: var(--black); color: var(--white); border: none; margin-bottom: 1rem;">
                 <label style="color: rgba(255,255,255,0.7);">Verifikasi Identitas Anda</label>
                 <select id="driverSelect" onchange="renderDriverPortal()" style="background: var(--white); color: var(--black); border: none; font-weight: 600; margin-top: 5px;">
                     </select>
+            </div>
+
+            <div class="panel" style="padding: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; background: var(--white);">
+                <div>
+                    <h3 style="font-size: 0.95rem; margin-bottom: 4px; color: var(--black); font-weight: 700;">Sinkronisasi Data (Restore)</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Upload file backup terbaru (.json) dari Admin untuk memperbarui data di perangkat ini.</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <input type="file" id="importFileDriver" accept=".json" style="padding: 0.5rem; max-width: 250px; border: 1px dashed var(--text-muted); background: var(--white);">
+                    <button class="btn btn-black" onclick="importJSONDriver()">Update Data</button>
+                </div>
             </div>
 
             <div id="driver-stats" class="hidden">
@@ -193,7 +204,7 @@
         <aside>
             <div class="sidebar-header">
                 <div class="login-logo" style="font-size: 1.5rem; margin: 0;">GoFast <span>System</span></div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; margin-top: 5px;">INTERNAL ADMIN V9</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; margin-top: 5px;">INTERNAL ADMIN V9.1</div>
                 <div style="font-size: 0.65rem; color: var(--primary); font-weight: 600; margin-top: 2px;">GoFast Official Support</div>
             </div>
             <ul class="menu">
@@ -377,8 +388,8 @@
                         <h2>Sistem Backup Lokal</h2>
                         <button class="btn btn-outline" onclick="exportJSON()" style="width: 100%; margin-bottom: 2rem;">Unduh File Backup (JSON)</button>
                         <h2 style="margin-top: 10px;">Restore (Pulihkan) Data</h2>
-                        <input type="file" id="importFile" accept=".json" style="margin-bottom: 1rem;">
-                        <button class="btn btn-black" onclick="importJSON()" style="width: 100%;">Jalankan Pemulihan File</button>
+                        <input type="file" id="importFileAdmin" accept=".json" style="margin-bottom: 1rem;">
+                        <button class="btn btn-black" onclick="importJSONAdmin()" style="width: 100%;">Jalankan Pemulihan File</button>
                     </div>
                 </div>
             </div>
@@ -518,7 +529,7 @@
             const d = appData.drivers.find(x => x.id === id);
             if (!d) return;
 
-            // LOGIKA BARU: Top up murni masuk ke Wallet, TIDAK melunasi hutang otomatis.
+            // Top up murni masuk ke Wallet
             d.walletBalance = (d.walletBalance || 0) + amt;
 
             appData.transactions.unshift({
@@ -587,7 +598,7 @@
             document.getElementById('dp-wallet').innerText = formatIDR(d.walletBalance || 0);
             document.getElementById('dp-hutang').innerText = formatIDR(d.hutangAktif || 0);
 
-            // Filter Histori untuk Driver Khusus ini
+            // Filter Histori
             let myTrx = appData.transactions.filter(t => t.driverId === id);
             let allOrderTrx = appData.transactions.filter(t => t.type === 'ORDER');
 
@@ -607,7 +618,7 @@
             myTrx.forEach(t => { if(t.type === 'ORDER') filteredOrderCount++; });
             document.getElementById('dp-order').innerText = filteredOrderCount;
 
-            // Render Table History Pribadi
+            // Table History Pribadi
             let html = '';
             myTrx.forEach(t => {
                 let badge = t.type === 'TOPUP' ? 'badge-info' : (t.type === 'ORDER' ? 'badge-danger' : 'badge-success');
@@ -618,7 +629,7 @@
             });
             document.getElementById('dp-history').innerHTML = html || `<tr><td colspan="4" class="text-center" style="color: var(--text-muted); padding: 2rem;">Belum ada histori pada periode ini.</td></tr>`;
 
-            // Render Leaderboard berdasarkan filter
+            // Leaderboard
             let leaderStats = {};
             appData.drivers.forEach(drv => leaderStats[drv.id] = {name: drv.name, count: 0});
             allOrderTrx.forEach(t => { if(leaderStats[t.driverId]) leaderStats[t.driverId].count++; });
@@ -752,7 +763,6 @@
             const d = appData.drivers.find(x => x.id === document.getElementById('payDriverId').value);
             const amt = parseFloat(document.getElementById('payAmount').value) || 0;
             if(d) {
-                // LOGIKA MANUAL PAY: Hanya mengurangi Hutang.
                 d.hutangAktif = ((d.hutangAktif || 0) - amt < 0) ? 0 : (d.hutangAktif || 0) - amt;
                 appData.transactions.unshift({ id: 'PAY-'+Date.now(), date: new Date().toISOString(), type: 'PAYMENT', driverId: d.id, driverName: d.name, amount: amt, desc: `Pelunasan Hutang Manual Via Kasir` });
                 document.getElementById('payPanel').style.display = 'none'; saveState(); alert("Pelunasan hutang tercatat.");
@@ -800,26 +810,40 @@
             a.setAttribute("download", "GoFast_SystemV9.json"); a.click();
         }
 
-        function importJSON() {
-            const file = document.getElementById('importFile').files[0];
+        // FUNGSI RESTORE UNTUK ADMIN
+        function importJSONAdmin() {
+            const file = document.getElementById('importFileAdmin').files[0];
             if(!file) return alert("Pilih file JSON!");
             const reader = new FileReader();
-            reader.onload = function(e) {
-                try { 
-                    const data = JSON.parse(e.target.result); 
-                    // Auto-Migration V8 -> V9
-                    const importedDrivers = data.drivers || [];
-                    appData.drivers = importedDrivers.map(d => {
-                        let adminBilled = d.totalAdminBilled !== undefined ? d.totalAdminBilled : (d.totalAdminFee || 0);
-                        let walletBal = d.walletBalance !== undefined ? d.walletBalance : (d.saldoTopUp || 0);
-                        let hutang = d.hutangAktif !== undefined ? d.hutangAktif : Math.max(0, (d.totalAdminFee || 0) - (d.totalPaid || 0));
-                        return { id: d.id, name: d.name, totalOrderCount: d.totalOrderCount || 0, totalOmsetKotor: d.totalOmsetKotor || 0, totalAdminBilled: adminBilled, hutangAktif: hutang, walletBalance: walletBal };
-                    });
-                    appData.transactions = data.transactions || []; 
-                    saveState(); alert("Restore berhasil! Data aman terkonversi."); 
-                } 
-                catch(err) { alert("Format JSON tidak valid."); }
-            }; reader.readAsText(file);
+            reader.onload = function(e) { processImportData(e.target.result); }; 
+            reader.readAsText(file);
+        }
+
+        // FUNGSI RESTORE UNTUK DRIVER
+        function importJSONDriver() {
+            const file = document.getElementById('importFileDriver').files[0];
+            if(!file) return alert("Pilih file JSON!");
+            const reader = new FileReader();
+            reader.onload = function(e) { processImportData(e.target.result, true); }; 
+            reader.readAsText(file);
+        }
+
+        // LOGIKA GLOBAL RESTORE (Mencegah duplikasi kode)
+        function processImportData(jsonString, isDriver = false) {
+            try { 
+                const data = JSON.parse(jsonString); 
+                const importedDrivers = data.drivers || [];
+                appData.drivers = importedDrivers.map(d => {
+                    let adminBilled = d.totalAdminBilled !== undefined ? d.totalAdminBilled : (d.totalAdminFee || 0);
+                    let walletBal = d.walletBalance !== undefined ? d.walletBalance : (d.saldoTopUp || 0);
+                    let hutang = d.hutangAktif !== undefined ? d.hutangAktif : Math.max(0, (d.totalAdminFee || 0) - (d.totalPaid || 0));
+                    return { id: d.id, name: d.name, totalOrderCount: d.totalOrderCount || 0, totalOmsetKotor: d.totalOmsetKotor || 0, totalAdminBilled: adminBilled, hutangAktif: hutang, walletBalance: walletBal };
+                });
+                appData.transactions = data.transactions || []; 
+                saveState(); 
+                alert(isDriver ? "Update data berhasil! Sistem Driver Portal telah disinkronkan." : "Restore berhasil! Data aman terkonversi."); 
+            } 
+            catch(err) { alert("Format JSON tidak valid."); }
         }
 
         // Init
