@@ -3,740 +3,826 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoFast - Driver Payment & Finance Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>GoFast Enterprise - System V9</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #00B761; 
-            --primary-dark: #008f4c;
-            --black: #111827;
-            --text-dark: #1f2937;
-            --text-gray: #6b7280;
-            --bg: #f3f4f6;
+            /* Warna Identitas GoFast (Emerald Green, White, Black) */
+            --primary: #047857; 
+            --primary-light: #d1fae5;
+            --black: #0f172a;
+            --bg-body: #f8fafc;
             --white: #ffffff;
+            --text-main: #334155;
+            --text-muted: #64748B;
+            --border: #e2e8f0;
             --danger: #ef4444;
             --danger-bg: #fee2e2;
             --warning: #f59e0b;
+            --info: #0ea5e9; 
+            --info-bg: #e0f2fe;
             --success: #10b981;
-            --border: rgba(0, 0, 0, 0.05);
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.3);
+            
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg-body); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; }
         
-        body { 
-            background: linear-gradient(135deg, #e0f2e9 0%, #f3f4f6 100%); 
-            color: var(--text-dark); 
-            display: flex; 
-            height: 100vh; 
-            overflow: hidden; 
-        }
+        .hidden { display: none !important; }
 
-        /* --- GLASSMORPHISM & LAYOUT --- */
-        .glass {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02), 0 10px 15px rgba(0, 0, 0, 0.03);
+        /* ================= LOGIN GATEWAY ================= */
+        #login-view { 
+            width: 100%; height: 100vh; 
+            background: linear-gradient(135deg, var(--black) 0%, #1e293b 100%); 
+            display: flex; align-items: center; justify-content: center; 
         }
+        .login-card {
+            background: var(--white); padding: 3rem 2rem; border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center;
+        }
+        .login-logo { font-size: 2.2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem; letter-spacing: -1px;}
+        .login-logo span { color: var(--black); }
+        .login-desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
 
-        aside {
-            width: 260px;
-            height: 100vh;
-            padding: 2rem 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            z-index: 10;
-        }
-        .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;}
-        .logo span { color: var(--black); }
+        /* ================= DRIVER PORTAL ================= */
+        #driver-view { width: 100%; height: 100vh; flex-direction: column; overflow: hidden; background: var(--bg-body); }
+        .driver-header { padding: 1.25rem 2.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--white); box-shadow: var(--shadow); z-index: 10; }
+        .driver-content { max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem; overflow-y: auto; height: calc(100vh - 75px); }
+
+        /* ================= ADMIN INTERNAL ================= */
+        #admin-view { width: 100%; height: 100vh; display: flex; }
+        aside { width: 260px; background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
+        .sidebar-header { padding: 2rem 1.5rem 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+        .menu { list-style: none; padding: 0 1rem; flex: 1; overflow-y: auto;}
+        .menu li { padding: 0.8rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 500; color: var(--text-muted); margin-bottom: 4px; font-size: 0.9rem;}
+        .menu li:hover { background: var(--bg-body); color: var(--black); }
+        .menu li.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
         
-        .menu { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
-        .menu li {
-            padding: 0.85rem 1rem;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--text-gray);
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-        }
-        .menu li:hover { background: rgba(0, 183, 97, 0.1); color: var(--primary); }
-        .menu li.active { background: var(--primary); color: var(--white); box-shadow: 0 4px 10px rgba(0, 183, 97, 0.3); }
-
-        main { flex: 1; padding: 2rem; overflow-y: auto; }
-        .container { display: none; animation: fadeIn 0.4s ease-in-out; }
+        main { flex: 1; padding: 2.5rem; overflow-y: auto; height: 100%; }
+        .container { display: none; animation: fadeIn 0.3s; }
         .container.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- COMPONENTS --- */
-        .header-title { font-size: 1.8rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--black); }
+        /* UI COMPONENTS */
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
         
-        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .card { background: var(--white); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); border-top: 4px solid var(--primary); }
+        .card h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 600; }
+        .card .value { font-size: 2rem; font-weight: 700; color: var(--black); letter-spacing: -1px; }
         
-        .card { padding: 1.5rem; border-radius: 16px; border-left: 5px solid var(--primary); }
-        .card h3 { font-size: 0.9rem; color: var(--text-gray); text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 600; }
-        .card .value { font-size: 2rem; font-weight: 700; color: var(--black); }
+        .card.warning { border-top-color: var(--warning); }
+        .card.black { border-top-color: var(--black); }
+        .card.info { border-top-color: var(--info); }
+        .card.danger { border-top-color: var(--danger); }
         
-        .panel { padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; }
-        .panel h2 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--black); }
+        .panel { background: var(--white); padding: 2rem; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+        .panel h2 { font-size: 1.1rem; margin-bottom: 1.25rem; color: var(--black); font-weight: 600; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; }
 
+        /* FORMS & BUTTONS */
         .form-group { margin-bottom: 1.2rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; color: var(--text-dark); }
-        input, select { 
-            width: 100%; padding: 0.85rem; border: 1px solid rgba(0,0,0,0.1); 
-            border-radius: 10px; font-size: 0.95rem; background: var(--white);
-            transition: 0.3s;
-        }
-        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 183, 97, 0.15); }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.85rem; }
+        input, select { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; outline: none; background: var(--bg-body); color: var(--black);}
+        input:focus, select:focus { border-color: var(--primary); background: var(--white); box-shadow: 0 0 0 3px var(--primary-light); }
         
-        .btn { padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 0.95rem;}
+        .btn { padding: 0.75rem 1.2rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.9rem; text-align: center; }
         .btn-primary { background: var(--primary); color: var(--white); }
-        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
         .btn-black { background: var(--black); color: var(--white); }
-        .btn-black:hover { background: #374151; }
         .btn-danger { background: var(--danger); color: var(--white); }
-        .btn-warning { background: var(--warning); color: var(--white); }
-        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 6px; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: var(--bg-body); color: var(--black); }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
 
-        .table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+        /* TABLES */
+        .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; text-align: left; background: var(--white); }
-        th, td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
-        th { background: rgba(0, 0, 0, 0.02); font-weight: 600; color: var(--text-gray); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px;}
-        tr:hover { background: rgba(0, 183, 97, 0.03); }
-        
+        th, td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        th { background: var(--bg-body); font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; }
+
         .text-right { text-align: right; }
-        .text-primary { color: var(--primary); }
+        .text-center { text-align: center; }
         .fw-bold { font-weight: 600; }
-        .flex-row { display: flex; gap: 1rem; align-items: center; }
-        .action-btns { display: flex; gap: 5px; justify-content: flex-end; }
+        .text-primary { color: var(--primary); }
+        .text-danger { color: var(--danger); }
+        .text-info { color: var(--info); }
         
-        .progress-wrapper { width: 100%; background: #e5e7eb; border-radius: 99px; height: 8px; overflow: hidden; margin-top: 5px; }
-        .progress-fill { height: 100%; background: var(--primary); transition: width 0.5s ease; }
-        .progress-danger { background: var(--danger); }
-        .progress-warning { background: var(--warning); }
-        
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; overflow-y:auto; padding:20px; }
-        .modal-content { max-width: 450px; margin: 40px auto; background: var(--white); border-radius: 16px; padding: 2rem; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .badge-success { background: var(--primary-light); color: var(--primary); }
+        .badge-danger { background: var(--danger-bg); color: var(--danger); }
+        .badge-info { background: var(--info-bg); color: var(--info); }
+
+        /* MODAL */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.7); z-index:999; justify-content: center; align-items: center; padding: 20px;}
+        .modal-content { background: var(--white); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 450px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
     </style>
 </head>
 <body>
 
-    <aside class="glass">
-        <div class="logo">✦ GoFast <span>System</span></div>
-        <ul class="menu">
-            <li class="active" onclick="switchTab('dashboard', this)">📊 Dashboard</li>
-            <li onclick="switchTab('keuangan', this)">💰 Keuangan & Alokasi</li>
-            <li onclick="switchTab('transaksi', this)">📝 Input Order Jasa</li>
-            <li onclick="switchTab('driver', this)">👥 Tabel & Pembayaran</li>
-            <li onclick="switchTab('history', this)">🕒 Riwayat</li>
-            <li onclick="switchTab('statistik', this)">📈 Statistik Visual</li>
-            <li onclick="switchTab('settings', this)">⚙️ Export & Backup</li>
-        </ul>
-    </aside>
+    <div id="login-view">
+        <div class="login-card">
+            <div class="login-logo">GoFast <span>System</span></div>
+            <div class="login-desc">Pilih jalur otorisasi sistem</div>
+            <button class="btn btn-black" style="width: 100%; margin-bottom: 1rem; padding: 1rem;" onclick="login('driver')">📱 Masuk Driver Portal</button>
+            <button class="btn btn-outline" style="width: 100%; padding: 1rem; border-color: var(--border);" onclick="login('admin')">🔒 Akses Internal Admin</button>
+        </div>
+    </div>
 
-    <main>
+    <div id="driver-view" class="hidden">
+        <div class="driver-header">
+            <div class="login-logo" style="margin: 0; font-size: 1.5rem;">GoFast <span>Driver Portal</span></div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="dp-filter" onchange="renderDriverPortal()" class="btn-outline" style="padding: 0.5rem; font-weight: 600; border-radius: 8px;">
+                    <option value="all">Semua Waktu</option>
+                    <option value="today">Hari Ini</option>
+                    <option value="this_month">Bulan Ini</option>
+                </select>
+                <button class="btn btn-outline btn-sm" style="border-color: var(--danger); color: var(--danger);" onclick="logout()">Keluar Sistem</button>
+            </div>
+        </div>
         
-        <!-- DASHBOARD -->
-        <div id="dashboard" class="container active">
-            <h1 class="header-title">Dashboard Premium</h1>
-            <div class="grid-3">
-                <div class="card glass">
-                    <h3>Total Order Keseluruhan</h3>
-                    <div class="value" id="dash-order">0</div>
-                </div>
-                <div class="card glass">
-                    <h3>Total Jasa (Omset Kotor)</h3>
-                    <div class="value" id="dash-jasa">Rp 0</div>
-                </div>
-                <div class="card glass" style="border-color: var(--warning);">
-                    <h3>Total Admin 15% (Target)</h3>
-                    <div class="value" id="dash-admin">Rp 0</div>
-                </div>
+        <div class="driver-content">
+            <div class="panel" style="background: var(--black); color: var(--white); border: none;">
+                <label style="color: rgba(255,255,255,0.7);">Verifikasi Identitas Anda</label>
+                <select id="driverSelect" onchange="renderDriverPortal()" style="background: var(--white); color: var(--black); border: none; font-weight: 600; margin-top: 5px;">
+                    </select>
             </div>
 
-            <div class="grid-2">
-                <div class="panel glass">
-                    <h2>🏆 Top 3 Driver Bintang</h2>
-                    <div id="top-drivers" style="display:flex; flex-direction:column; gap:1rem;"></div>
-                </div>
-                <div class="panel glass">
-                    <h2>🎯 Countdown Target Omset</h2>
-                    <p style="color: var(--text-gray); font-size: 0.9rem; margin-bottom: 10px;">Target Omset Admin: Rp 4.000.000</p>
-                    <div class="progress-wrapper" style="height: 20px; border-radius: 10px;">
-                        <div id="target-progress" class="progress-fill" style="width: 0%;"></div>
+            <div id="driver-stats" class="hidden">
+                <div class="grid-3">
+                    <div class="card info">
+                        <h3>SALDO WALLET AKTIF</h3>
+                        <div class="value text-info" id="dp-wallet">Rp 0</div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">Sisa dana untuk auto-potong admin</p>
                     </div>
-                    <p id="target-text" style="margin-top: 10px; font-weight: bold; text-align: right;">0% Tercapai</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- KEUANGAN -->
-        <div id="keuangan" class="container">
-            <h1 class="header-title">Dashboard Keuangan Otomatis</h1>
-            <div class="panel glass">
-                <div class="flex-row" style="margin-bottom: 1.5rem; justify-content: space-between;">
-                    <h2>Tabel Perhitungan Bagi Hasil</h2>
-                    <div class="form-group" style="margin: 0; width: 250px;">
-                        <label style="font-size: 0.8rem;">Pengeluaran Internal (Rp)</label>
-                        <input type="number" id="inputPengeluaran" placeholder="0" onkeyup="renderFinance()">
+                    <div class="card danger">
+                        <h3>HUTANG ADMIN (BELUM LUNAS)</h3>
+                        <div class="value text-danger" id="dp-hutang">Rp 0</div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">Hutang karena wallet tidak mencukupi</p>
+                    </div>
+                    <div class="card black">
+                        <h3>TOTAL ORDER DISELESAIKAN</h3>
+                        <div class="value" id="dp-order">0</div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;" id="dp-order-label">Berdasarkan filter waktu</p>
                     </div>
                 </div>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Item / Jabatan</th>
-                                <th>Fungsi</th>
-                                <th class="text-right">Minimal Omset</th>
-                                <th class="text-right">Pencapaian Target</th>
-                                <th class="text-right">Gaji + Reward</th>
-                            </tr>
-                        </thead>
-                        <tbody id="financeTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
 
-        <!-- INPUT ORDER -->
-        <div id="transaksi" class="container">
-            <h1 class="header-title">Input Order Driver</h1>
-            <div class="panel glass" style="max-width: 600px; margin: auto;">
-                <h2>Proses Order & Potong Admin</h2>
-                <form id="formOrder" onsubmit="processOrder(event)">
-                    <div class="form-group">
-                        <label>Pilih Driver</label>
-                        <select id="trxDriver" required></select>
+                <div class="grid-2">
+                    <div class="panel" style="padding: 0; display: flex; flex-direction: column;">
+                        <h2 style="padding: 1.5rem 1.5rem 1rem; margin: 0; border: none;">Peringkat Performa Driver</h2>
+                        <div style="padding: 0 1.5rem 1.5rem;" id="dp-leaderboard"></div>
                     </div>
-                    <div class="form-group">
-                        <label>Jenis Layanan</label>
-                        <select id="trxService" required>
-                            <option value="GoFast Ride">GoFast Ride</option>
-                            <option value="GoFast Car">GoFast Car (Travel)</option>
-                            <option value="RA Food">RA Food Delivery</option>
-                            <option value="GoFast Courier">GoFast Courier</option>
-                        </select>
+
+                    <div class="panel" style="padding: 0; display: flex; flex-direction: column;">
+                        <h2 style="padding: 1.5rem 1.5rem 1rem; margin: 0; border: none;">Riwayat Mutasi & Order</h2>
+                        <div class="table-wrapper" style="border: none; border-top: 1px solid var(--border); border-radius: 0; flex: 1;">
+                            <table>
+                                <thead><tr><th>Waktu</th><th>Tipe</th><th>Keterangan</th><th class="text-right">Nominal</th></tr></thead>
+                                <tbody id="dp-history"></tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Harga Jasa Order (Rp)</label>
-                        <input type="number" id="trxAmount" required placeholder="Contoh: 20000" onkeyup="previewFee()">
-                        <p style="font-size: 0.85rem; color: var(--danger); margin-top: 8px;">
-                            Admin 15% yang akan ditambahkan ke hutang: <strong id="preview-fee">Rp 0</strong>
-                        </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-view" class="hidden">
+        <aside>
+            <div class="sidebar-header">
+                <div class="login-logo" style="font-size: 1.5rem; margin: 0;">GoFast <span>System</span></div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; margin-top: 5px;">INTERNAL ADMIN V9</div>
+                <div style="font-size: 0.65rem; color: var(--primary); font-weight: 600; margin-top: 2px;">GoFast Official Support</div>
+            </div>
+            <ul class="menu">
+                <li id="menu-dash" class="active" onclick="switchTab('tab-dashboard', this)">Dashboard Overview</li>
+                <li onclick="switchTab('tab-keuangan', this)">Financial Allocation</li>
+                <li onclick="switchTab('tab-wallet', this)">Dompet & Top Up</li>
+                <li onclick="switchTab('tab-order', this)">Input Order Jasa</li>
+                <li onclick="switchTab('tab-driver', this)">Driver Directory</li>
+                <li onclick="switchTab('tab-history', this)">Global Log Records</li>
+                <li onclick="switchTab('tab-settings', this)">Data Management</li>
+            </ul>
+            <div style="padding: 1rem;"><button class="btn btn-outline" style="width: 100%; color: var(--danger); border-color: var(--danger-bg);" onclick="logout()">Log Out Admin</button></div>
+        </aside>
+
+        <main>
+            <div id="tab-dashboard" class="container active">
+                <div class="flex-between" style="margin-bottom: 2rem;">
+                    <h1 style="font-size: 1.8rem; color: var(--black);">Dashboard Premium</h1>
+                    <select id="dashFilter" onchange="renderDashboard()" style="width: auto; font-weight: 600; padding: 0.6rem 1rem;">
+                        <option value="all">Semua Waktu (All Time)</option>
+                        <option value="today">Khusus Hari Ini</option>
+                        <option value="this_month">Khusus Bulan Ini</option>
+                    </select>
+                </div>
+                
+                <div class="grid-3">
+                    <div class="card black">
+                        <h3>Total Order Driver</h3>
+                        <div class="value" id="dash-order">0</div>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Proses Transaksi</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- TABEL DRIVER -->
-        <div id="driver" class="container">
-            <div class="flex-row" style="justify-content: space-between; margin-bottom: 1.5rem;">
-                <h1 class="header-title" style="margin:0;">Tabel Driver & Cicilan Hutang</h1>
-                <button class="btn btn-black" onclick="document.getElementById('modalAddDriver').style.display='block'">+ Tambah Driver</button>
-            </div>
-            
-            <div class="form-group" style="max-width: 300px;">
-                <input type="text" id="searchDriver" placeholder="🔍 Cari nama driver..." onkeyup="renderDrivers()">
-            </div>
-
-            <!-- Panel Pembayaran Cepat -->
-            <div class="panel glass" id="payPanel" style="display:none; border: 2px solid var(--primary); background: rgba(0,183,97,0.05);">
-                <h2>Input Cicilan / Pembayaran: <span id="payDriverName" class="text-primary"></span></h2>
-                <form onsubmit="processPayment(event)" class="flex-row" style="align-items: flex-end;">
-                    <input type="hidden" id="payDriverId">
-                    <div class="form-group" style="flex:1; margin:0;">
-                        <label>Nominal Pembayaran (Rp)</label>
-                        <input type="number" id="payAmount" required placeholder="Sisa hutang: Rp ...">
+                    <div class="card">
+                        <h3>Total Jasa (Omset Kotor)</h3>
+                        <div class="value" id="dash-jasa">Rp 0</div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Bayar Sekarang</button>
-                    <button type="button" class="btn btn-danger" onclick="document.getElementById('payPanel').style.display='none'">Batal</button>
-                </form>
-            </div>
+                    <div class="card warning">
+                        <h3>Gross Admin 15% (Target)</h3>
+                        <div class="value" id="dash-admin">Rp 0</div>
+                    </div>
+                </div>
 
-            <div class="panel glass">
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Driver</th>
-                                <th class="text-center">Handle</th>
-                                <th class="text-right">Total Jasa</th>
-                                <th class="text-right">Admin 15% (Terutang)</th>
-                                <th class="text-right">Sudah Dicicil/Bayar</th>
-                                <th class="text-right" style="color:var(--danger)">Sisa Hutang</th>
-                                <th class="text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="driverTableBody"></tbody>
-                    </table>
+                <div class="panel">
+                    <h2>Leaderboard Top Driver</h2>
+                    <div id="top-drivers" style="display: flex; flex-direction: column; gap: 10px;"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- RIWAYAT -->
-        <div id="history" class="container">
-            <h1 class="header-title">Riwayat Transaksi & Pembayaran</h1>
-            <div class="panel glass">
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Tipe</th>
-                                <th>Keterangan</th>
-                                <th class="text-right">Nominal</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody"></tbody>
-                    </table>
+            <div id="tab-wallet" class="container">
+                <h1 style="font-size: 1.8rem; color: var(--black); margin-bottom: 2rem;">Dashboard Saldo & Top Up</h1>
+                
+                <div class="grid-2">
+                    <div class="card info" style="background: var(--info); border: none;">
+                        <h3 style="color: rgba(255,255,255,0.8);">Total Top Up Masuk (Historis All Time)</h3>
+                        <div class="value" style="color: white;" id="wallet-total-in">Rp 0</div>
+                    </div>
+                    <div class="card" style="background: var(--black); border: none;">
+                        <h3 style="color: rgba(255,255,255,0.6);">Total Sisa Saldo Mengendap (Semua Driver)</h3>
+                        <div class="value" style="color: white;" id="wallet-active">Rp 0</div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="panel">
+                        <h2>Formulir Top Up Saldo Driver</h2>
+                        <form onsubmit="processTopUp(event)">
+                            <div class="form-group"><label>Pilih Identitas Driver</label><select id="topupDriver" required></select></div>
+                            <div class="form-group"><label>Nominal Setor Tunai (Rp)</label><input type="number" id="topupAmount" required placeholder="Contoh: 100000"></div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Proses Isi Saldo Dompet</button>
+                        </form>
+                    </div>
+                    
+                    <div class="panel" style="padding: 0; display: flex; flex-direction: column;">
+                        <h2 style="padding: 2rem 2rem 1rem; margin: 0; border: none;">Riwayat Transaksi Top Up Saja</h2>
+                        <div class="table-wrapper" style="border: none; flex: 1; border-top: 1px solid var(--border); border-radius: 0;">
+                            <table>
+                                <thead><tr><th>Waktu</th><th>Driver</th><th class="text-right">Nominal Saldo Masuk</th></tr></thead>
+                                <tbody id="topup-history"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- STATISTIK -->
-        <div id="statistik" class="container">
-            <h1 class="header-title">Statistik Persentase Tunggakan</h1>
-            <div class="panel glass" id="statsContainer"></div>
-        </div>
-
-        <!-- SETTINGS -->
-        <div id="settings" class="container">
-            <h1 class="header-title">Sistem Backup & Keamanan</h1>
-            <div class="grid-2">
-                <div class="panel glass">
-                    <h2>Backup Data Lokal (JSON)</h2>
-                    <button class="btn btn-black" onclick="exportJSON()">⬇️ Download JSON Backup</button>
-                    <hr style="margin: 1.5rem 0; border:0; border-top:1px solid var(--border);">
-                    <h2>Restore Data</h2>
-                    <input type="file" id="importFile" accept=".json" style="margin-bottom: 10px;">
-                    <button class="btn btn-primary" onclick="importJSON()">⬆️ Restore Data</button>
-                </div>
-                <div class="panel glass">
-                    <h2>Export Laporan</h2>
-                    <button class="btn btn-primary" onclick="exportCSV()" style="width:100%; margin-bottom:1rem;">📊 Export Excel (CSV)</button>
+            <div id="tab-order" class="container">
+                <h1 style="font-size: 1.8rem; color: var(--black); margin-bottom: 2rem;">Order Entry System</h1>
+                <div class="panel" style="max-width: 600px; margin: 0 auto;">
+                    <h2>Form Proses Order Jasa</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Sistem akan otomatis memotong biaya Admin 15% dari Saldo Wallet Driver. Jika saldo kosong atau kurang, sisanya akan menjadi Hutang.</p>
+                    <form onsubmit="processOrder(event)">
+                        <div class="form-group"><label>Identitas Driver</label><select id="trxDriver" required></select></div>
+                        <div class="form-group"><label>Layanan GoFast</label>
+                            <select id="trxService" required>
+                                <option value="GoFast Ride">GoFast Ride</option>
+                                <option value="Fastcar Private">Fastcar Private (Setiap Hari)</option>
+                                <option value="Fastcar Travel">Fastcar Travel (Weekend Only)</option>
+                                <option value="RA Food">RA Food Delivery</option>
+                                <option value="GoFast Courier">GoFast Courier</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nominal Jasa Order (Rp)</label>
+                            <input type="number" id="trxAmount" required placeholder="Contoh: 50000" onkeyup="previewFee()">
+                            <div style="margin-top: 8px; padding: 12px; background: var(--bg-body); border-radius: 8px; display: flex; justify-content: space-between;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Estimasi Potongan Admin 15%:</span>
+                                <strong id="preview-fee" class="text-danger">Rp 0</strong>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-black" style="width: 100%;">Eksekusi Order Jasa</button>
+                    </form>
                 </div>
             </div>
-        </div>
 
-    </main>
+            <div id="tab-driver" class="container">
+                <div class="flex-between" style="margin-bottom: 2rem;">
+                    <h1 style="font-size: 1.8rem; color: var(--black); margin: 0;">Driver Directory</h1>
+                    <button class="btn btn-primary" onclick="openAddModal()">+ Tambah Driver Baru</button>
+                </div>
+                
+                <div class="panel" id="payPanel" style="display:none; border: 2px solid var(--primary); background: var(--primary-light);">
+                    <h2 style="border-bottom: none; padding-bottom: 0;">Pelunasan Hutang Manual: <span id="payDriverName" class="text-primary"></span></h2>
+                    <form onsubmit="processManualPay(event)" style="display: flex; gap: 1rem; align-items: flex-end;">
+                        <input type="hidden" id="payDriverId">
+                        <div class="form-group" style="flex: 1; margin: 0;"><label>Nominal Pembayaran Hutang (Rp)</label><input type="number" id="payAmount" required></div>
+                        <button type="submit" class="btn btn-primary">Konfirmasi Pelunasan</button>
+                        <button type="button" class="btn btn-outline" onclick="document.getElementById('payPanel').style.display='none'">Batal</button>
+                    </form>
+                </div>
 
-    <!-- MODAL TAMBAH DRIVER -->
-    <div id="modalAddDriver" class="modal">
-        <div class="modal-content glass">
-            <h2>Tambah Driver Baru</h2>
-            <form onsubmit="addDriver(event)" style="margin-top: 1rem;">
-                <div class="form-group"><label>Nama Driver</label><input type="text" id="newDriverName" required></div>
-                <div class="flex-row">
-                    <button type="submit" class="btn btn-primary" style="flex:1;">Simpan</button>
-                    <button type="button" class="btn btn-danger" onclick="document.getElementById('modalAddDriver').style.display='none'">Batal</button>
+                <div class="panel" style="padding: 0;">
+                    <div class="table-wrapper" style="border: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Identitas Driver</th>
+                                    <th class="text-center">Total Order</th>
+                                    <th class="text-right">Omset Kotor</th>
+                                    <th class="text-right" style="color: var(--info);">Sisa Saldo Wallet</th>
+                                    <th class="text-right" style="color: var(--danger);">Hutang Aktif Admin</th>
+                                    <th class="text-right">Aksi Manajemen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-driver"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-keuangan" class="container">
+                <h1 style="font-size: 1.8rem; color: var(--black); margin-bottom: 2rem;">Financial Allocation</h1>
+                <div class="panel">
+                    <div class="flex-between" style="margin-bottom: 1.5rem;">
+                        <h2 style="margin: 0; border: none; padding: 0;">Tabel Bagi Hasil Real-Time</h2>
+                        <div class="form-group" style="margin: 0; width: 250px;">
+                            <input type="number" id="inputPengeluaran" placeholder="Beban Operasional (Rp)" onkeyup="renderFinance()">
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="finance-table">
+                            <thead><tr><th>Struktur / Jabatan</th><th>Distribusi</th><th class="text-right">Target Minimal</th><th class="text-right">% Capai</th><th class="text-right">Estimasi Gaji</th></tr></thead>
+                            <tbody id="finance-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-history" class="container">
+                <h1 style="font-size: 1.8rem; color: var(--black); margin-bottom: 2rem;">Global Transaction Logs</h1>
+                <div class="panel" style="padding: 0;">
+                    <div class="table-wrapper" style="border: none;">
+                        <table>
+                            <thead><tr><th>Timestamp (Jam & Tanggal)</th><th>Jenis</th><th>Keterangan Lengkap Sistem</th><th class="text-right">Nilai Mutasi</th></tr></thead>
+                            <tbody id="global-history"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-settings" class="container">
+                <h1 style="font-size: 1.8rem; color: var(--black); margin-bottom: 2rem;">Sistem Manajemen Data</h1>
+                <div class="grid-2">
+                    <div class="panel">
+                        <h2>Sistem Backup Lokal</h2>
+                        <button class="btn btn-outline" onclick="exportJSON()" style="width: 100%; margin-bottom: 2rem;">Unduh File Backup (JSON)</button>
+                        <h2 style="margin-top: 10px;">Restore (Pulihkan) Data</h2>
+                        <input type="file" id="importFile" accept=".json" style="margin-bottom: 1rem;">
+                        <button class="btn btn-black" onclick="importJSON()" style="width: 100%;">Jalankan Pemulihan File</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modalEdit" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1.5rem; font-size: 1.2rem;">Koreksi Database Driver</h2>
+            <form id="formEdit" onsubmit="saveEditDriver(event)">
+                <input type="hidden" id="edit-id">
+                <div class="form-group"><label>Nama Driver</label><input type="text" id="edit-name" required></div>
+                <div class="grid-2" style="gap: 1rem; margin-bottom: 0;">
+                    <div class="form-group"><label>Total Order Selesai</label><input type="number" id="edit-order" required></div>
+                    <div class="form-group"><label>Omset Kotor (Rp)</label><input type="number" id="edit-omset" required></div>
+                </div>
+                <div class="grid-2" style="gap: 1rem; margin-bottom: 0;">
+                    <div class="form-group"><label style="color: var(--info);">Saldo Wallet (Rp)</label><input type="number" id="edit-wallet" required></div>
+                    <div class="form-group"><label style="color: var(--danger);">Hutang Aktif (Rp)</label><input type="number" id="edit-hutang" required></div>
+                </div>
+                <div class="form-group"><label>Total Histori Tagihan Admin (Gross Billed)</label><input type="number" id="edit-billed" required></div>
+                
+                <div class="flex-between" style="margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-outline" style="color: var(--danger); border-color: var(--danger-bg);" onclick="deleteDriver()">Hapus Permanen</button>
+                    <div>
+                        <button type="button" class="btn btn-outline" onclick="document.getElementById('modalEdit').style.display='none'">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
-
-    <!-- MODAL EDIT DRIVER -->
-    <div id="modalEditDriver" class="modal">
-        <div class="modal-content glass">
-            <h2>Koreksi Data Driver</h2>
-            <form onsubmit="saveEditDriver(event)" style="margin-top: 1rem;">
-                <input type="hidden" id="editDriverId">
-                <div class="form-group">
-                    <label>Nama Driver</label>
-                    <input type="text" id="editDriverName" required>
-                </div>
-                <div class="form-group">
-                    <label>Total Handle (Order)</label>
-                    <input type="number" id="editDriverHandle" required>
-                </div>
-                <div class="form-group">
-                    <label>Akumulasi Jasa (Rp)</label>
-                    <input type="number" id="editDriverJasa" required>
-                </div>
-                <div class="form-group">
-                    <label>Total Biaya Admin 15% (Hutang Awal) (Rp)</label>
-                    <input type="number" id="editDriverAdmin" required>
-                </div>
-                <div class="form-group">
-                    <label>Total Sudah Dibayar (Rp)</label>
-                    <input type="number" id="editDriverPaid" required>
-                </div>
-                <div class="flex-row">
-                    <button type="submit" class="btn btn-primary" style="flex:1;">Simpan Perubahan</button>
-                    <button type="button" class="btn btn-danger" onclick="document.getElementById('modalEditDriver').style.display='none'">Batal</button>
+    
+    <div id="modalAdd" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1.5rem; font-size: 1.2rem;">Registrasi Driver Baru</h2>
+            <form onsubmit="processAddDriver(event)">
+                <div class="form-group"><label>Nama Lengkap Driver</label><input type="text" id="add-name" required></div>
+                <div style="display: flex; gap: 10px; margin-top: 1.5rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('modalAdd').style.display='none'">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Registrasi</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // DATA DEFAULT: April - Mei 2026
-        const defaultData = [
-            { id: "DRV-01", name: "Dewi", totalOrderCount: 131, totalOmsetKotor: 1286000, totalAdminFee: 192900, totalPaid: 0 },
-            { id: "DRV-02", name: "Gafur", totalOrderCount: 115, totalOmsetKotor: 1074000, totalAdminFee: 161100, totalPaid: 0 },
-            { id: "DRV-03", name: "Wawan", totalOrderCount: 80, totalOmsetKotor: 750000, totalAdminFee: 112500, totalPaid: 0 },
-            { id: "DRV-04", name: "Gani", totalOrderCount: 66, totalOmsetKotor: 649500, totalAdminFee: 97425, totalPaid: 0 },
-            { id: "DRV-05", name: "Lisa", totalOrderCount: 65, totalOmsetKotor: 633000, totalAdminFee: 94950, totalPaid: 0 },
-            { id: "DRV-06", name: "Fattah", totalOrderCount: 70, totalOmsetKotor: 609000, totalAdminFee: 91350, totalPaid: 0 },
-            { id: "DRV-07", name: "Jannah", totalOrderCount: 67, totalOmsetKotor: 580000, totalAdminFee: 87000, totalPaid: 0 },
-            { id: "DRV-08", name: "Cindy", totalOrderCount: 45, totalOmsetKotor: 397000, totalAdminFee: 59550, totalPaid: 0 },
-            { id: "DRV-09", name: "Makki", totalOrderCount: 15, totalOmsetKotor: 375000, totalAdminFee: 56250, totalPaid: 0 },
-            { id: "DRV-10", name: "Inung", totalOrderCount: 37, totalOmsetKotor: 350000, totalAdminFee: 52500, totalPaid: 0 },
-            { id: "DRV-11", name: "Dimas", totalOrderCount: 31, totalOmsetKotor: 342000, totalAdminFee: 51300, totalPaid: 0 },
-            { id: "DRV-12", name: "Afan (Fannnskuy)", totalOrderCount: 30, totalOmsetKotor: 329000, totalAdminFee: 49350, totalPaid: 0 },
-            { id: "DRV-13", name: "Popo", totalOrderCount: 27, totalOmsetKotor: 303000, totalAdminFee: 45450, totalPaid: 0 },
-            { id: "DRV-14", name: "David (Vit)", totalOrderCount: 34, totalOmsetKotor: 270500, totalAdminFee: 40575, totalPaid: 0 },
-            { id: "DRV-15", name: "Ajiz", totalOrderCount: 29, totalOmsetKotor: 238000, totalAdminFee: 35700, totalPaid: 0 },
-            { id: "DRV-16", name: "Alan (Rosita Dewi)", totalOrderCount: 16, totalOmsetKotor: 154000, totalAdminFee: 23100, totalPaid: 0 },
-            { id: "DRV-17", name: "Rendy", totalOrderCount: 2, totalOmsetKotor: 19000, totalAdminFee: 2850, totalPaid: 0 }
+        // Data Struktur V9 - Final Clean Wallet Separation
+        const defaultDrivers = [
+            {id:"DRV-01", name:"Dewi", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-02", name:"Gafur", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-03", name:"Wawan", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-04", name:"Gani", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-05", name:"Lisa", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-06", name:"Fattah", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-07", name:"Jannah", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-08", name:"Cindy", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-09", name:"Makki", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-10", name:"Inung", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-11", name:"Dimas", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-12", name:"Afan (Fannnskuy)", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-13", name:"Popo", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-14", name:"David (Vit)", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-15", name:"Ajiz", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-16", name:"Alan (Rosita Dewi)", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0},
+            {id:"DRV-17", name:"Rendy", totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0}
         ];
 
-        // MENGGUNAKAN KEY BARU v3 agar data lama tersetting ulang dengan default ini
-        let drivers = JSON.parse(localStorage.getItem('gf_drivers_v3'));
-        if(!drivers || drivers.length === 0) {
-            drivers = defaultData; // Injeksi data April-Mei
-        }
-        let transactions = JSON.parse(localStorage.getItem('gf_trx_v3')) || [];
+        let appData = JSON.parse(localStorage.getItem('gf_data_v9'));
+        if (!appData) { appData = { drivers: defaultDrivers, transactions: [] }; }
         
         const TARGET_OMSET = 4000000;
-        
+        const ADMIN_PIN = "4424";
+
         function saveState() {
-            localStorage.setItem('gf_drivers_v3', JSON.stringify(drivers));
-            localStorage.setItem('gf_trx_v3', JSON.stringify(transactions));
+            localStorage.setItem('gf_data_v9', JSON.stringify(appData));
             updateAllViews();
         }
 
-        const formatIDR = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+        const formatIDR = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num || 0);
+        const formatDate = (isoStr) => new Date(isoStr).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+        // --- GATEWAY & NAVIGATION ---
+        function login(role) {
+            if (role === 'admin') {
+                const pin = prompt("Masukkan PIN Keamanan Admin:");
+                if (pin === ADMIN_PIN) {
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('admin-view').classList.remove('hidden');
+                    updateAllViews();
+                } else { alert("Akses Ditolak: PIN tidak valid."); }
+            } else if (role === 'driver') {
+                document.getElementById('login-view').classList.add('hidden');
+                document.getElementById('driver-view').classList.remove('hidden');
+                document.getElementById('driverSelect').value = "";
+                document.getElementById('driver-stats').classList.add('hidden');
+                updateAllViews();
+            }
+        }
+
+        function logout() {
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('driver-view').classList.add('hidden');
+            document.getElementById('login-view').classList.remove('hidden');
+        }
 
         function switchTab(tabId, element) {
             document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             if(element) element.classList.add('active');
-            updateAllViews();
         }
 
-        // --- TAMBAH, EDIT, HAPUS DRIVER ---
-        function addDriver(e) {
-            e.preventDefault();
-            drivers.push({
-                id: 'DRV-' + Date.now(),
-                name: document.getElementById('newDriverName').value,
-                totalAdminFee: 0, totalPaid: 0, totalOrderCount: 0, totalOmsetKotor: 0
-            });
-            document.getElementById('newDriverName').value = '';
-            document.getElementById('modalAddDriver').style.display = 'none';
-            saveState();
-        }
+        function updateAllViews() {
+            const optDriver = `<option value="" disabled selected>-- Pilih Identitas Akun --</option>` + 
+                              appData.drivers.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            document.getElementById('driverSelect').innerHTML = optDriver;
+            document.getElementById('trxDriver').innerHTML = optDriver;
+            document.getElementById('topupDriver').innerHTML = optDriver;
 
-        function openEditModal(id) {
-            const d = drivers.find(drv => drv.id === id);
-            if(!d) return;
-            document.getElementById('editDriverId').value = d.id;
-            document.getElementById('editDriverName').value = d.name;
-            document.getElementById('editDriverHandle').value = d.totalOrderCount;
-            document.getElementById('editDriverJasa').value = d.totalOmsetKotor;
-            document.getElementById('editDriverAdmin').value = d.totalAdminFee;
-            document.getElementById('editDriverPaid').value = d.totalPaid;
-            document.getElementById('modalEditDriver').style.display = 'block';
-        }
-
-        function saveEditDriver(e) {
-            e.preventDefault();
-            const id = document.getElementById('editDriverId').value;
-            const d = drivers.find(drv => drv.id === id);
-            if(d) {
-                d.name = document.getElementById('editDriverName').value;
-                d.totalOrderCount = parseInt(document.getElementById('editDriverHandle').value) || 0;
-                d.totalOmsetKotor = parseFloat(document.getElementById('editDriverJasa').value) || 0;
-                d.totalAdminFee = parseFloat(document.getElementById('editDriverAdmin').value) || 0;
-                d.totalPaid = parseFloat(document.getElementById('editDriverPaid').value) || 0;
-                saveState();
-                document.getElementById('modalEditDriver').style.display = 'none';
-                alert('Data driver berhasil dikoreksi!');
+            if (!document.getElementById('driver-view').classList.contains('hidden')) renderDriverPortal();
+            if (!document.getElementById('admin-view').classList.contains('hidden')) {
+                renderDashboard(); renderWalletDash(); renderDriversAdmin(); renderFinanceAdmin(); renderHistoryAdmin();
             }
         }
 
-        function deleteDriver(id, name) {
-            if(confirm(`Yakin ingin HAPUS driver ${name}? \nData driver ini akan hilang dari tabel utama.`)) {
-                drivers = drivers.filter(d => d.id !== id);
-                saveState();
-            }
-        }
-
-        // --- INPUT TRANSAKSI & PEMBAYARAN ---
+        // --- CORE LOGIC: TRANSAKSI (PEMISAHAN WALLET & HUTANG) ---
         function previewFee() {
-            const amount = parseFloat(document.getElementById('trxAmount').value) || 0;
-            document.getElementById('preview-fee').innerText = formatIDR(amount * 0.15);
+            const val = parseFloat(document.getElementById('trxAmount').value) || 0;
+            document.getElementById('preview-fee').innerText = formatIDR(val * 0.15);
+        }
+
+        function processTopUp(e) {
+            e.preventDefault();
+            const id = document.getElementById('topupDriver').value;
+            const amt = parseFloat(document.getElementById('topupAmount').value);
+            const d = appData.drivers.find(x => x.id === id);
+            if (!d) return;
+
+            // LOGIKA BARU: Top up murni masuk ke Wallet, TIDAK melunasi hutang otomatis.
+            d.walletBalance = (d.walletBalance || 0) + amt;
+
+            appData.transactions.unshift({
+                id: 'TOP-' + Date.now(), date: new Date().toISOString(), type: 'TOPUP',
+                driverId: d.id, driverName: d.name, amount: amt, desc: `Top Up Saldo Dompet Masuk`
+            });
+
+            document.getElementById('topupAmount').value = "";
+            saveState(); alert(`Top Up Rp ${amt} berhasil ditambahkan ke Wallet ${d.name}.`);
         }
 
         function processOrder(e) {
             e.preventDefault();
-            const driverId = document.getElementById('trxDriver').value;
-            const service = document.getElementById('trxService').value;
-            const amount = parseFloat(document.getElementById('trxAmount').value);
-            const fee = amount * 0.15; 
+            const id = document.getElementById('trxDriver').value;
+            const srv = document.getElementById('trxService').value;
+            const amt = parseFloat(document.getElementById('trxAmount').value);
+            const fee = amt * 0.15;
             
-            const driver = drivers.find(d => d.id === driverId);
-            if(!driver) return;
+            const d = appData.drivers.find(x => x.id === id);
+            if (!d) return;
 
-            driver.totalAdminFee += fee;
-            driver.totalOmsetKotor += amount;
-            driver.totalOrderCount += 1;
+            d.totalOrderCount = (d.totalOrderCount || 0) + 1;
+            d.totalOmsetKotor = (d.totalOmsetKotor || 0) + amt;
+            d.totalAdminBilled = (d.totalAdminBilled || 0) + fee;
 
-            transactions.unshift({
-                id: 'ORD-' + Date.now(),
-                date: new Date().toISOString(),
-                type: 'ORDER',
-                driverId: driver.id,
-                driverName: driver.name,
-                service: service, amount: amount, fee: fee,
-                desc: `${driver.name} - ${service} (Tarif: ${formatIDR(amount)})`
+            let infoMsg = "";
+            let walletBal = d.walletBalance || 0;
+            
+            if (walletBal >= fee) {
+                d.walletBalance = walletBal - fee;
+                infoMsg = "15% Lunas (Dipotong dari Wallet)";
+            } else {
+                let sisaFee = fee;
+                if (walletBal > 0) {
+                    sisaFee -= walletBal;
+                    d.walletBalance = 0;
+                    infoMsg = `Potong sisa Wallet, sisa 15% jadi Hutang`;
+                } else {
+                    infoMsg = "Masuk sepenuhnya ke Hutang (Wallet Rp 0)";
+                }
+                d.hutangAktif = (d.hutangAktif || 0) + sisaFee;
+            }
+
+            appData.transactions.unshift({
+                id: 'ORD-' + Date.now(), date: new Date().toISOString(), type: 'ORDER',
+                driverId: d.id, driverName: d.name, amount: amt, fee: fee,
+                desc: `${d.name} | ${srv} | ${infoMsg}`
             });
 
-            document.getElementById('formOrder').reset();
-            document.getElementById('preview-fee').innerText = 'Rp 0';
-            saveState();
-            alert(`Order dicatat! Hutang admin ${driver.name} bertambah ${formatIDR(fee)}.`);
+            document.getElementById('trxAmount').value = ""; document.getElementById('preview-fee').innerText = "Rp 0";
+            saveState(); alert(`Order Terproses! Detail: ${infoMsg}`);
         }
 
-        function openPayPanel(id, name, hutang) {
-            document.getElementById('payPanel').style.display = 'block';
-            document.getElementById('payDriverId').value = id;
-            document.getElementById('payDriverName').innerText = name;
-            document.getElementById('payAmount').value = hutang > 0 ? hutang : '';
-        }
-
-        function processPayment(e) {
-            e.preventDefault();
-            const driverId = document.getElementById('payDriverId').value;
-            const amount = parseFloat(document.getElementById('payAmount').value);
+        // --- DRIVER PORTAL RENDERING (PREMIUM & FILTER) ---
+        function renderDriverPortal() {
+            const id = document.getElementById('driverSelect').value;
+            const container = document.getElementById('driver-stats');
+            if(!id) { container.classList.add('hidden'); return; }
             
-            const driver = drivers.find(d => d.id === driverId);
-            if(!driver) return;
+            const filter = document.getElementById('dp-filter').value;
+            const now = new Date();
+            const d = appData.drivers.find(x => x.id === id);
+            container.classList.remove('hidden');
+            
+            // Absolut: Wallet dan Hutang tidak terpengaruh filter
+            document.getElementById('dp-wallet').innerText = formatIDR(d.walletBalance || 0);
+            document.getElementById('dp-hutang').innerText = formatIDR(d.hutangAktif || 0);
 
-            driver.totalPaid += amount;
+            // Filter Histori untuk Driver Khusus ini
+            let myTrx = appData.transactions.filter(t => t.driverId === id);
+            let allOrderTrx = appData.transactions.filter(t => t.type === 'ORDER');
 
-            transactions.unshift({
-                id: 'PAY-' + Date.now(),
-                date: new Date().toISOString(),
-                type: 'PAYMENT',
-                driverId: driver.id,
-                driverName: driver.name,
-                amount: amount,
-                desc: `${driver.name} mencicil/membayar hutang admin.`
+            if (filter === 'today') {
+                myTrx = myTrx.filter(t => new Date(t.date).toDateString() === now.toDateString());
+                allOrderTrx = allOrderTrx.filter(t => new Date(t.date).toDateString() === now.toDateString());
+                document.getElementById('dp-order-label').innerText = "Khusus hari ini";
+            } else if (filter === 'this_month') {
+                myTrx = myTrx.filter(t => { let dt = new Date(t.date); return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear(); });
+                allOrderTrx = allOrderTrx.filter(t => { let dt = new Date(t.date); return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear(); });
+                document.getElementById('dp-order-label').innerText = "Khusus bulan ini";
+            } else {
+                document.getElementById('dp-order-label').innerText = "Akumulasi sepanjang waktu";
+            }
+
+            let filteredOrderCount = 0;
+            myTrx.forEach(t => { if(t.type === 'ORDER') filteredOrderCount++; });
+            document.getElementById('dp-order').innerText = filteredOrderCount;
+
+            // Render Table History Pribadi
+            let html = '';
+            myTrx.forEach(t => {
+                let badge = t.type === 'TOPUP' ? 'badge-info' : (t.type === 'ORDER' ? 'badge-danger' : 'badge-success');
+                let color = t.type === 'ORDER' ? 'text-danger' : (t.type === 'TOPUP' ? 'text-info' : 'text-success');
+                let prefix = t.type === 'ORDER' ? '-' : '+';
+                let val = t.type === 'ORDER' ? t.fee : t.amount;
+                html += `<tr><td style="font-size:0.85rem; color:var(--text-muted);">${formatDate(t.date)}</td><td><span class="badge ${badge}">${t.type}</span></td><td>${t.desc}</td><td class="text-right fw-bold ${color}">${prefix} ${formatIDR(val)}</td></tr>`;
             });
+            document.getElementById('dp-history').innerHTML = html || `<tr><td colspan="4" class="text-center" style="color: var(--text-muted); padding: 2rem;">Belum ada histori pada periode ini.</td></tr>`;
 
-            document.getElementById('payPanel').style.display = 'none';
-            saveState();
-            alert(`Pembayaran sejumlah ${formatIDR(amount)} berhasil memotong hutang ${driver.name}!`);
+            // Render Leaderboard berdasarkan filter
+            let leaderStats = {};
+            appData.drivers.forEach(drv => leaderStats[drv.id] = {name: drv.name, count: 0});
+            allOrderTrx.forEach(t => { if(leaderStats[t.driverId]) leaderStats[t.driverId].count++; });
+            let sortedLeaders = Object.values(leaderStats).sort((a,b) => b.count - a.count).slice(0,5);
+            
+            let leadHtml = sortedLeaders.map((ld, i) => {
+                let isMe = ld.name === d.name;
+                return `
+                <div style="padding: 12px 15px; border: 1px solid ${isMe?'var(--primary)':'var(--border)'}; border-radius: 8px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; background: ${isMe?'var(--primary-light)':'var(--white)'};">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: ${i===0?'var(--primary)':'var(--text-muted)'};">#${i+1}</div>
+                    <div style="flex:1;">
+                        <div style="font-weight: 600; color: ${isMe?'var(--primary)':'var(--black)'};">${ld.name} ${isMe?'(Akun Anda)':''}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${ld.count} Transaksi Terselesaikan</div>
+                    </div>
+                </div>`;
+            }).join('');
+            document.getElementById('dp-leaderboard').innerHTML = leadHtml || '<div class="text-center" style="padding: 2rem; color: var(--text-muted);">Belum ada data pada periode ini</div>';
         }
 
-        // --- RENDER UI ---
-        function updateAllViews() {
-            renderDashboard();
-            renderFinance();
-            renderDrivers();
-            renderHistory();
-            renderStats();
-            const select = document.getElementById('trxDriver');
-            select.innerHTML = drivers.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-        }
-
+        // --- ADMIN RENDERING ---
         function renderDashboard() {
-            let totOrder = 0, totJasa = 0, totAdmin = 0;
-            drivers.forEach(d => {
-                totOrder += d.totalOrderCount;
-                totJasa += d.totalOmsetKotor;
-                totAdmin += d.totalAdminFee;
-            });
+            const filter = document.getElementById('dashFilter').value;
+            const now = new Date();
+            let ord=0, js=0, adm=0;
 
-            document.getElementById('dash-order').innerText = totOrder;
-            document.getElementById('dash-jasa').innerText = formatIDR(totJasa);
-            document.getElementById('dash-admin').innerText = formatIDR(totAdmin);
+            if (filter === 'all') {
+                appData.drivers.forEach(d => { ord += (d.totalOrderCount || 0); js += (d.totalOmsetKotor || 0); adm += (d.totalAdminBilled || 0); });
+            } else {
+                let fTrx = appData.transactions.filter(t => t.type === 'ORDER');
+                if (filter === 'today') fTrx = fTrx.filter(t => new Date(t.date).toDateString() === now.toDateString());
+                else if (filter === 'this_month') fTrx = fTrx.filter(t => { let d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+                fTrx.forEach(t => { ord += 1; js += (t.amount || 0); adm += (t.fee || 0); });
+            }
+            document.getElementById('dash-order').innerText = ord;
+            document.getElementById('dash-jasa').innerText = formatIDR(js);
+            document.getElementById('dash-admin').innerText = formatIDR(adm);
 
-            let percent = TARGET_OMSET > 0 ? (totAdmin / TARGET_OMSET) * 100 : 0;
-            percent = percent > 100 ? 100 : percent;
-            document.getElementById('target-progress').style.width = `${percent}%`;
-            document.getElementById('target-text').innerText = `${percent.toFixed(1)}% Tercapai`;
-
-            let sorted = [...drivers].sort((a,b) => b.totalOrderCount - a.totalOrderCount).slice(0,3);
-            document.getElementById('top-drivers').innerHTML = sorted.map((d, i) => `
-                <div class="flex-row" style="background: rgba(0,0,0,0.03); padding: 10px; border-radius: 8px;">
-                    <div style="font-size:1.5rem; font-weight:bold; color:var(--primary); width:30px;">#${i+1}</div>
-                    <div style="flex:1;"><strong>${d.name}</strong> <br> <small>${d.totalOrderCount} Trip</small></div>
-                </div>
-            `).join('');
+            const top = [...appData.drivers].sort((a,b)=>(b.totalOrderCount||0) - (a.totalOrderCount||0)).slice(0,3);
+            document.getElementById('top-drivers').innerHTML = top.map((d,i)=>`<div style="padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 15px;"><div style="font-size: 1.5rem; font-weight: 700; color: ${i===0?'var(--primary)':'#cbd5e1'};">#${i+1}</div><div><div style="font-weight: 600;">${d.name}</div><div style="font-size: 0.8rem; color: var(--text-muted);">${d.totalOrderCount || 0} Transaksi Diselesaikan</div></div></div>`).join('');
         }
 
-        function renderFinance() {
-            const pengeluaran = parseFloat(document.getElementById('inputPengeluaran').value) || 0;
-            let totalAdminTerkumpul = 0;
-            drivers.forEach(d => totalAdminTerkumpul += d.totalAdminFee);
-            let omsetBersih = totalAdminTerkumpul - pengeluaran;
-            let percentCapai = (totalAdminTerkumpul / TARGET_OMSET) * 100;
+        function renderWalletDash() {
+            let totalIn = 0;
+            appData.transactions.forEach(t => { if(t.type === 'TOPUP') totalIn += (t.amount || 0); });
+            let walletSisa = appData.drivers.reduce((s, d) => s + (d.walletBalance || 0), 0);
+
+            document.getElementById('wallet-total-in').innerText = formatIDR(totalIn);
+            document.getElementById('wallet-active').innerText = formatIDR(walletSisa);
+
+            let html = '';
+            appData.transactions.filter(t => t.type === 'TOPUP').forEach(t => {
+                html += `<tr><td style="font-size:0.85rem; color:var(--text-muted);">${formatDate(t.date)}</td><td class="fw-bold">${t.driverName}</td><td class="text-right fw-bold text-info">+ ${formatIDR(t.amount)}</td></tr>`;
+            });
+            document.getElementById('topup-history').innerHTML = html || `<tr><td colspan="3" class="text-center" style="padding: 2rem;">Belum ada data setoran.</td></tr>`;
+        }
+
+        function renderDriversAdmin() {
+            let html = '';
+            appData.drivers.forEach(d => {
+                html += `<tr>
+                    <td class="fw-bold" style="color: var(--black);">${d.name}</td>
+                    <td class="text-center">${d.totalOrderCount || 0}</td>
+                    <td class="text-right">${formatIDR(d.totalOmsetKotor || 0)}</td>
+                    <td class="text-right fw-bold text-info">${formatIDR(d.walletBalance || 0)}</td>
+                    <td class="text-right fw-bold text-danger">${formatIDR(d.hutangAktif || 0)}</td>
+                    <td class="text-right">
+                        <button class="btn btn-outline btn-sm" onclick="openManualPay('${d.id}')">Pelunasan Hutang</button>
+                        <button class="btn btn-primary btn-sm" onclick="openEdit('${d.id}')">Edit</button>
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('table-driver').innerHTML = html;
+        }
+
+        function renderFinanceAdmin() {
+            const beban = parseFloat(document.getElementById('inputPengeluaran').value) || 0;
+            let grossBilled = 0, totalHutang = 0;
+            appData.drivers.forEach(d => { 
+                grossBilled += (d.totalAdminBilled || 0); 
+                totalHutang += (d.hutangAktif || 0); 
+            });
+            
+            let netRevenue = grossBilled - totalHutang - beban;
 
             const config = [
-                { role: 'Operator 1', percent: 0.125, minTarget: 500000 },
-                { role: 'Operator 2', percent: 0.125, minTarget: 500000 },
-                { role: 'Editor', percent: 0.1125, minTarget: 450000 },
-                { role: 'Kas', percent: 0.10, minTarget: 400000 },
-                { role: 'Perjuangan', percent: 0.25, minTarget: 1000000 },
-                { role: 'Owner', percent: 0.14375, minTarget: 575000 },
-                { role: 'Pemegang Saham', percent: 0.14375, minTarget: 575000 }
+                { r: 'Operator 1', p: 0.125, m: 500000 }, { r: 'Operator 2', p: 0.125, m: 500000 },
+                { r: 'Editor', p: 0.1125, m: 450000 }, { r: 'Kas Internal', p: 0.10, m: 400000 },
+                { r: 'Operasional Lapangan', p: 0.25, m: 1000000 }, { r: 'Owner / Direksi', p: 0.14375, m: 575000 },
+                { r: 'Pemegang Saham', p: 0.14375, m: 575000 }
             ];
 
             let html = `
-                <tr style="background: rgba(0, 183, 97, 0.1); font-weight: bold;">
-                    <td>TOTAL KESELURUHAN</td>
-                    <td>Auto hitung % total</td>
-                    <td class="text-right">${formatIDR(TARGET_OMSET)}</td>
-                    <td class="text-right">${formatIDR(totalAdminTerkumpul)}</td>
-                    <td class="text-right">-</td>
-                </tr>
-                <tr>
-                    <td class="fw-bold" style="color:var(--danger)">Pengeluaran Internal</td>
-                    <td>Auto akumulasi</td>
-                    <td colspan="3" class="text-right fw-bold" style="color:var(--danger)">- ${formatIDR(pengeluaran)}</td>
-                </tr>
-                <tr style="background: var(--black); color: var(--white);">
-                    <td colspan="4" class="fw-bold">Omset Bersih (Total - Pengeluaran)</td>
-                    <td class="text-right fw-bold">${formatIDR(omsetBersih)}</td>
-                </tr>
+                <tr style="background: var(--bg-body);"><td class="fw-bold">Gross Revenue (Total Tagihan Admin Historis)</td><td>Sumber Target Papan Bawah</td><td class="text-right">-</td><td class="text-right">-</td><td class="text-right fw-bold">${formatIDR(grossBilled)}</td></tr>
+                <tr style="background: #fee2e2; color: #dc2626;"><td class="fw-bold">Hutang Tertunda Driver</td><td>Uang belum masuk ke kas</td><td colspan="3" class="text-right fw-bold">- ${formatIDR(totalHutang)}</td></tr>
+                <tr style="background: #fee2e2; color: #dc2626;"><td class="fw-bold">Beban Operasional</td><td>Dipotong dari uang fisik</td><td colspan="3" class="text-right fw-bold">- ${formatIDR(beban)}</td></tr>
+                <tr style="background: var(--black); color: white;"><td colspan="4" class="fw-bold" style="font-size: 1.1rem;">NET CASH (Uang Fisik Saldo Akhir)</td><td class="text-right fw-bold" style="font-size: 1.1rem; color: var(--primary-light);">${formatIDR(netRevenue)}</td></tr>
+                <tr><td colspan="5" style="text-align:center; background:var(--bg-body); font-weight:600; font-size:0.8rem; letter-spacing:1px;">--- ESTIMASI DISTRIBUSI BERDASARKAN GROSS REVENUE ---</td></tr>
             `;
 
             config.forEach(c => {
-                let gaji = totalAdminTerkumpul * c.percent;
-                html += `
-                    <tr>
-                        <td>${c.role}</td>
-                        <td>Auto distribusi ${(c.percent*100).toFixed(2)}%</td>
-                        <td class="text-right">${formatIDR(c.minTarget)}</td>
-                        <td class="text-right">${percentCapai.toFixed(1)}%</td>
-                        <td class="text-right fw-bold text-primary">${formatIDR(gaji)}</td>
-                    </tr>
-                `;
+                let est = grossBilled * c.p;
+                let capai = TARGET_OMSET > 0 ? (grossBilled / TARGET_OMSET) * 100 : 0;
+                html += `<tr><td>${c.r}</td><td style="color:var(--text-muted); font-size:0.8rem;">${(c.p*100).toFixed(2)}% dari Gross</td><td class="text-right">${formatIDR(c.m)}</td><td class="text-right">${capai.toFixed(1)}%</td><td class="text-right fw-bold text-primary">${formatIDR(est)}</td></tr>`;
             });
-            document.getElementById('financeTableBody').innerHTML = html;
+            document.getElementById('finance-body').innerHTML = html;
         }
 
-        function renderDrivers() {
-            const search = document.getElementById('searchDriver').value.toLowerCase();
+        function renderHistoryAdmin() {
             let html = '';
-            
-            drivers.forEach(d => {
-                if(search && !d.name.toLowerCase().includes(search)) return;
-                let sisaHutang = d.totalAdminFee - d.totalPaid;
-                
-                html += `
-                    <tr>
-                        <td class="fw-bold">${d.name}</td>
-                        <td class="text-center">${d.totalOrderCount}x</td>
-                        <td class="text-right">${formatIDR(d.totalOmsetKotor)}</td>
-                        <td class="text-right">${formatIDR(d.totalAdminFee)}</td>
-                        <td class="text-right text-primary">${formatIDR(d.totalPaid)}</td>
-                        <td class="text-right fw-bold" style="color: ${sisaHutang > 0 ? 'var(--danger)' : 'var(--text-gray)'}">
-                            ${formatIDR(sisaHutang)}
-                        </td>
-                        <td class="text-center">
-                            <div class="action-btns">
-                                <button class="btn btn-primary btn-sm" onclick="openPayPanel('${d.id}', '${d.name}', ${sisaHutang})">Bayar</button>
-                                <button class="btn btn-warning btn-sm" onclick="openEditModal('${d.id}')">Edit</button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteDriver('${d.id}', '${d.name}')">Hapus</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+            appData.transactions.forEach(t => {
+                let badge = t.type === 'TOPUP' ? 'badge-info' : (t.type === 'ORDER' ? 'badge-danger' : 'badge-success');
+                let color = t.type === 'ORDER' ? 'text-danger' : (t.type === 'TOPUP' ? 'text-info' : 'text-success');
+                let val = t.type === 'ORDER' ? (t.fee || 0) : (t.amount || 0);
+                html += `<tr><td style="font-size:0.85rem; color:var(--text-muted)">${formatDate(t.date)}</td><td><span class="badge ${badge}">${t.type}</span></td><td>${t.desc}</td><td class="text-right fw-bold ${color}">${t.type==='ORDER'?'-':'+'} ${formatIDR(val)}</td></tr>`;
             });
-            document.getElementById('driverTableBody').innerHTML = html;
+            document.getElementById('global-history').innerHTML = html || `<tr><td colspan="4" class="text-center" style="padding: 2rem;">Belum ada transaksi tercatat.</td></tr>`;
         }
 
-        function renderHistory() {
-            let html = '';
-            transactions.forEach(t => {
-                const date = new Date(t.date).toLocaleString('id-ID');
-                let color = t.type === 'PAYMENT' ? 'var(--primary)' : 'var(--danger)';
-                let prefix = t.type === 'PAYMENT' ? '+' : '-';
-                let value = t.type === 'PAYMENT' ? t.amount : t.fee;
-
-                html += `
-                    <tr>
-                        <td style="font-size:0.85rem; color:var(--text-gray)">${date}</td>
-                        <td><span style="background:${color}; color:white; padding: 2px 8px; border-radius:4px; font-size:0.8rem;">${t.type}</span></td>
-                        <td>${t.desc}</td>
-                        <td class="text-right fw-bold" style="color:${color}">${prefix} ${formatIDR(value)}</td>
-                    </tr>
-                `;
-            });
-            document.getElementById('historyTableBody').innerHTML = html;
+        // --- CRUD MANAJEMEN ---
+        function openManualPay(id) {
+            const d = appData.drivers.find(x => x.id === id);
+            if(!d) return;
+            document.getElementById('payPanel').style.display = 'block';
+            document.getElementById('payDriverId').value = d.id;
+            document.getElementById('payDriverName').innerText = d.name;
+            document.getElementById('payAmount').value = (d.hutangAktif && d.hutangAktif > 0) ? d.hutangAktif : '';
+        }
+        
+        function processManualPay(e) {
+            e.preventDefault();
+            const d = appData.drivers.find(x => x.id === document.getElementById('payDriverId').value);
+            const amt = parseFloat(document.getElementById('payAmount').value) || 0;
+            if(d) {
+                // LOGIKA MANUAL PAY: Hanya mengurangi Hutang.
+                d.hutangAktif = ((d.hutangAktif || 0) - amt < 0) ? 0 : (d.hutangAktif || 0) - amt;
+                appData.transactions.unshift({ id: 'PAY-'+Date.now(), date: new Date().toISOString(), type: 'PAYMENT', driverId: d.id, driverName: d.name, amount: amt, desc: `Pelunasan Hutang Manual Via Kasir` });
+                document.getElementById('payPanel').style.display = 'none'; saveState(); alert("Pelunasan hutang tercatat.");
+            }
         }
 
-        function renderStats() {
-            let html = '';
-            drivers.forEach(d => {
-                let sisaHutang = d.totalAdminFee - d.totalPaid;
-                let percentUnpaid = d.totalAdminFee > 0 ? (sisaHutang / d.totalAdminFee) * 100 : 0;
-                if(percentUnpaid < 0) percentUnpaid = 0;
+        function openAddModal() { document.getElementById('modalAdd').style.display='flex'; }
+        function processAddDriver(e) {
+            e.preventDefault();
+            appData.drivers.push({ id: 'DRV-'+Date.now(), name: document.getElementById('add-name').value, totalOrderCount:0, totalOmsetKotor:0, totalAdminBilled:0, hutangAktif:0, walletBalance:0 });
+            document.getElementById('add-name').value = ''; document.getElementById('modalAdd').style.display='none'; saveState();
+        }
 
-                let barColor = percentUnpaid > 50 ? 'progress-danger' : (percentUnpaid > 0 ? 'progress-warning' : 'progress-success');
+        function openEdit(id) {
+            const d = appData.drivers.find(x => x.id === id);
+            if(!d) return;
+            document.getElementById('edit-id').value = d.id; document.getElementById('edit-name').value = d.name;
+            document.getElementById('edit-order').value = d.totalOrderCount || 0; document.getElementById('edit-omset').value = d.totalOmsetKotor || 0;
+            document.getElementById('edit-wallet').value = d.walletBalance || 0; document.getElementById('edit-hutang').value = d.hutangAktif || 0;
+            document.getElementById('edit-billed').value = d.totalAdminBilled || 0;
+            document.getElementById('modalEdit').style.display='flex';
+        }
 
-                html += `
-                    <div style="margin-bottom: 1.2rem;">
-                        <div class="flex-row" style="justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
-                            <strong>${d.name}</strong>
-                            <span>${percentUnpaid.toFixed(0)}% belum lunas (${formatIDR(sisaHutang)})</span>
-                        </div>
-                        <div class="progress-wrapper">
-                            <div class="progress-fill ${barColor}" style="width: ${percentUnpaid}%;"></div>
-                        </div>
-                    </div>
-                `;
-            });
-            document.getElementById('statsContainer').innerHTML = html;
+        function saveEditDriver(e) {
+            e.preventDefault();
+            const d = appData.drivers.find(x => x.id === document.getElementById('edit-id').value);
+            if(d) {
+                d.name = document.getElementById('edit-name').value; d.totalOrderCount = parseInt(document.getElementById('edit-order').value)||0;
+                d.totalOmsetKotor = parseFloat(document.getElementById('edit-omset').value)||0; d.walletBalance = parseFloat(document.getElementById('edit-wallet').value)||0;
+                d.hutangAktif = parseFloat(document.getElementById('edit-hutang').value)||0; d.totalAdminBilled = parseFloat(document.getElementById('edit-billed').value)||0;
+                document.getElementById('modalEdit').style.display='none'; saveState(); alert("Koreksi tersimpan.");
+            }
+        }
+
+        function deleteDriver() {
+            const id = document.getElementById('edit-id').value;
+            if(confirm("Yakin ingin menghapus permanen driver ini?")) {
+                appData.drivers = appData.drivers.filter(d => d.id !== id);
+                document.getElementById('modalEdit').style.display='none'; saveState();
+            }
         }
 
         function exportJSON() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({drivers, transactions}));
-            const a = document.createElement('a');
-            a.setAttribute("href", dataStr);
-            a.setAttribute("download", "GoFast_Backup_" + new Date().getTime() + ".json");
-            a.click();
+            const a = document.createElement('a'); a.setAttribute("href", "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData)));
+            a.setAttribute("download", "GoFast_SystemV9.json"); a.click();
         }
 
         function importJSON() {
             const file = document.getElementById('importFile').files[0];
-            if(!file) return alert("Pilih file JSON dulu!");
+            if(!file) return alert("Pilih file JSON!");
             const reader = new FileReader();
             reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    drivers = data.drivers || [];
-                    transactions = data.transactions || [];
-                    saveState();
-                    alert("Data berhasil direstore!");
-                } catch(err) { alert("Format JSON tidak valid!"); }
-            }
-            reader.readAsText(file);
+                try { 
+                    const data = JSON.parse(e.target.result); 
+                    // Auto-Migration V8 -> V9
+                    const importedDrivers = data.drivers || [];
+                    appData.drivers = importedDrivers.map(d => {
+                        let adminBilled = d.totalAdminBilled !== undefined ? d.totalAdminBilled : (d.totalAdminFee || 0);
+                        let walletBal = d.walletBalance !== undefined ? d.walletBalance : (d.saldoTopUp || 0);
+                        let hutang = d.hutangAktif !== undefined ? d.hutangAktif : Math.max(0, (d.totalAdminFee || 0) - (d.totalPaid || 0));
+                        return { id: d.id, name: d.name, totalOrderCount: d.totalOrderCount || 0, totalOmsetKotor: d.totalOmsetKotor || 0, totalAdminBilled: adminBilled, hutangAktif: hutang, walletBalance: walletBal };
+                    });
+                    appData.transactions = data.transactions || []; 
+                    saveState(); alert("Restore berhasil! Data aman terkonversi."); 
+                } 
+                catch(err) { alert("Format JSON tidak valid."); }
+            }; reader.readAsText(file);
         }
 
-        function exportCSV() {
-            let csv = "Tanggal,Tipe,Keterangan,Nominal\n";
-            transactions.forEach(t => {
-                let val = t.type === 'PAYMENT' ? t.amount : t.fee;
-                csv += `${t.date},${t.type},"${t.desc}",${val}\n`;
-            });
-            const dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-            const a = document.createElement('a');
-            a.setAttribute("href", dataStr);
-            a.setAttribute("download", "GoFast_Report.csv");
-            a.click();
-        }
-
+        // Init
         updateAllViews();
     </script>
 </body>
