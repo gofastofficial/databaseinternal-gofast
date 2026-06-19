@@ -78,6 +78,7 @@
         .card.black { border-top-color: var(--black); }
         .card.info { border-top-color: var(--info); }
         .card.danger { border-top-color: var(--danger); }
+        .card.success { border-top-color: var(--success); }
         
         .panel { background: var(--white); padding: 2rem; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 1.5rem; }
         .panel h2 { font-size: 1.1rem; margin-bottom: 1.25rem; color: var(--black); font-weight: 600; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; }
@@ -96,6 +97,11 @@
         .btn-outline:hover { background: var(--bg-body); color: var(--black); }
         .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
 
+        .driver-filter-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .driver-date-filter { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .driver-date-filter label { margin: 0; font-size: 0.75rem; color: var(--text-muted); }
+        .driver-date-filter input { width: auto; min-width: 145px; padding: 0.5rem; background: var(--white); font-weight: 600; }
+
         /* TABLES */
         .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; text-align: left; background: var(--white); }
@@ -108,6 +114,7 @@
         .text-primary { color: var(--primary); }
         .text-danger { color: var(--danger); }
         .text-info { color: var(--info); }
+        .text-success { color: var(--success); }
         
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
         .badge-success { background: var(--primary-light); color: var(--primary); }
@@ -133,12 +140,20 @@
     <div id="driver-view" class="hidden">
         <div class="driver-header">
             <div class="login-logo" style="margin: 0; font-size: 1.5rem;">GoFast <span>Driver Portal</span></div>
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="driver-filter-bar">
                 <select id="dp-filter" onchange="renderDriverPortal()" class="btn-outline" style="padding: 0.5rem; font-weight: 600; border-radius: 8px; background: var(--white);">
                     <option value="all">Semua Waktu</option>
                     <option value="today">Hari Ini</option>
                     <option value="this_month">Bulan Ini</option>
+                    <option value="custom">Tanggal Manual</option>
                 </select>
+                <div class="driver-date-filter">
+                    <label for="dp-start-date">Dari</label>
+                    <input type="date" id="dp-start-date" onchange="setDriverCustomDateFilter()">
+                    <label for="dp-end-date">Sampai</label>
+                    <input type="date" id="dp-end-date" onchange="setDriverCustomDateFilter()">
+                    <button class="btn btn-outline btn-sm" type="button" onclick="clearDriverDateFilter()">Reset Tanggal</button>
+                </div>
                 <button class="btn btn-outline btn-sm" style="border-color: var(--danger); color: var(--danger); background: var(--white);" onclick="logout()">Keluar Sistem</button>
             </div>
         </div>
@@ -177,6 +192,21 @@
                         <h3>TOTAL ORDER DISELESAIKAN</h3>
                         <div class="value" id="dp-order">0</div>
                         <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;" id="dp-order-label">Berdasarkan filter waktu</p>
+                    </div>
+                    <div class="card success">
+                        <h3>OMSET JASA</h3>
+                        <div class="value text-success" id="dp-omset">Rp 0</div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;" id="dp-omset-label">Dihitung dari jasa order</p>
+                    </div>
+                    <div class="card warning">
+                        <h3>RANKING HANDLE ANDA</h3>
+                        <div class="value" style="color: var(--warning);" id="dp-rank">#-</div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;" id="dp-rank-label">Berdasarkan jumlah handle terbanyak</p>
+                    </div>
+                    <div class="card info">
+                        <h3>AKUMULASI SISA WALLET</h3>
+                        <div class="value text-info" id="dp-wallet-total">Rp 0</div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">Total sisa wallet semua driver</p>
                     </div>
                 </div>
 
@@ -472,6 +502,70 @@
         const formatIDR = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num || 0);
         const formatDate = (isoStr) => new Date(isoStr).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 
+        function parseDateInput(value, endOfDay = false) {
+            if (!value) return null;
+            const parts = value.split('-').map(Number);
+            if (parts.length !== 3 || parts.some(isNaN)) return null;
+            return new Date(parts[0], parts[1] - 1, parts[2], endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0);
+        }
+
+        function isTransactionInPeriod(transaction, period) {
+            const trxDate = new Date(transaction.date);
+            if (isNaN(trxDate.getTime())) return false;
+            if (period.start && trxDate < period.start) return false;
+            if (period.end && trxDate > period.end) return false;
+            return true;
+        }
+
+        function getDriverPortalPeriod() {
+            const filter = document.getElementById('dp-filter').value;
+            const now = new Date();
+            const startInput = document.getElementById('dp-start-date').value;
+            const endInput = document.getElementById('dp-end-date').value;
+
+            if (filter === 'today') {
+                return {
+                    filter,
+                    start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+                    end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+                    label: 'Khusus hari ini'
+                };
+            }
+
+            if (filter === 'this_month') {
+                return {
+                    filter,
+                    start: new Date(now.getFullYear(), now.getMonth(), 1),
+                    end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
+                    label: 'Khusus bulan ini'
+                };
+            }
+
+            if (filter === 'custom' || startInput || endInput) {
+                const start = parseDateInput(startInput);
+                const end = parseDateInput(endInput, true);
+                let label = 'Periode tanggal manual';
+                if (startInput && endInput) label = `${startInput} s/d ${endInput}`;
+                else if (startInput) label = `Mulai ${startInput}`;
+                else if (endInput) label = `Sampai ${endInput}`;
+                return { filter: 'custom', start, end, label };
+            }
+
+            return { filter: 'all', start: null, end: null, label: 'Akumulasi sepanjang waktu' };
+        }
+
+        function setDriverCustomDateFilter() {
+            document.getElementById('dp-filter').value = 'custom';
+            renderDriverPortal();
+        }
+
+        function clearDriverDateFilter() {
+            document.getElementById('dp-start-date').value = '';
+            document.getElementById('dp-end-date').value = '';
+            document.getElementById('dp-filter').value = 'all';
+            renderDriverPortal();
+        }
+
         // --- GATEWAY & NAVIGATION ---
         function login(role) {
             if (role === 'admin') {
@@ -589,34 +683,32 @@
             const container = document.getElementById('driver-stats');
             if(!id) { container.classList.add('hidden'); return; }
             
-            const filter = document.getElementById('dp-filter').value;
-            const now = new Date();
+            const period = getDriverPortalPeriod();
+            const isAllPeriod = period.filter === 'all';
             const d = appData.drivers.find(x => x.id === id);
             container.classList.remove('hidden');
             
             // Absolut: Wallet dan Hutang tidak terpengaruh filter
             document.getElementById('dp-wallet').innerText = formatIDR(d.walletBalance || 0);
             document.getElementById('dp-hutang').innerText = formatIDR(d.hutangAktif || 0);
+            document.getElementById('dp-wallet-total').innerText = formatIDR(appData.drivers.reduce((sum, drv) => sum + (drv.walletBalance || 0), 0));
 
             // Filter Histori
             let myTrx = appData.transactions.filter(t => t.driverId === id);
             let allOrderTrx = appData.transactions.filter(t => t.type === 'ORDER');
 
-            if (filter === 'today') {
-                myTrx = myTrx.filter(t => new Date(t.date).toDateString() === now.toDateString());
-                allOrderTrx = allOrderTrx.filter(t => new Date(t.date).toDateString() === now.toDateString());
-                document.getElementById('dp-order-label').innerText = "Khusus hari ini";
-            } else if (filter === 'this_month') {
-                myTrx = myTrx.filter(t => { let dt = new Date(t.date); return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear(); });
-                allOrderTrx = allOrderTrx.filter(t => { let dt = new Date(t.date); return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear(); });
-                document.getElementById('dp-order-label').innerText = "Khusus bulan ini";
-            } else {
-                document.getElementById('dp-order-label').innerText = "Akumulasi sepanjang waktu";
+            if (!isAllPeriod) {
+                myTrx = myTrx.filter(t => isTransactionInPeriod(t, period));
+                allOrderTrx = allOrderTrx.filter(t => isTransactionInPeriod(t, period));
             }
 
-            let filteredOrderCount = 0;
-            myTrx.forEach(t => { if(t.type === 'ORDER') filteredOrderCount++; });
+            const myOrderTrx = myTrx.filter(t => t.type === 'ORDER');
+            const filteredOrderCount = isAllPeriod ? (d.totalOrderCount || 0) : myOrderTrx.length;
+            const filteredOmsetJasa = isAllPeriod ? (d.totalOmsetKotor || 0) : myOrderTrx.reduce((sum, t) => sum + (t.amount || 0), 0);
             document.getElementById('dp-order').innerText = filteredOrderCount;
+            document.getElementById('dp-order-label').innerText = period.label;
+            document.getElementById('dp-omset').innerText = formatIDR(filteredOmsetJasa);
+            document.getElementById('dp-omset-label').innerText = period.label;
 
             // Table History Pribadi
             let html = '';
@@ -631,18 +723,36 @@
 
             // Leaderboard
             let leaderStats = {};
-            appData.drivers.forEach(drv => leaderStats[drv.id] = {name: drv.name, count: 0});
-            allOrderTrx.forEach(t => { if(leaderStats[t.driverId]) leaderStats[t.driverId].count++; });
-            let sortedLeaders = Object.values(leaderStats).sort((a,b) => b.count - a.count).slice(0,5);
+            appData.drivers.forEach(drv => {
+                leaderStats[drv.id] = {
+                    id: drv.id,
+                    name: drv.name,
+                    count: isAllPeriod ? (drv.totalOrderCount || 0) : 0,
+                    omset: isAllPeriod ? (drv.totalOmsetKotor || 0) : 0
+                };
+            });
+            if (!isAllPeriod) {
+                allOrderTrx.forEach(t => {
+                    if(leaderStats[t.driverId]) {
+                        leaderStats[t.driverId].count++;
+                        leaderStats[t.driverId].omset += (t.amount || 0);
+                    }
+                });
+            }
+            const allLeaders = Object.values(leaderStats).sort((a,b) => (b.count - a.count) || (b.omset - a.omset) || a.name.localeCompare(b.name));
+            const myRank = allLeaders.findIndex(ld => ld.id === d.id);
+            document.getElementById('dp-rank').innerText = myRank >= 0 ? `#${myRank + 1}` : '#-';
+            document.getElementById('dp-rank-label').innerText = `${filteredOrderCount} handle - ${period.label}`;
+            let sortedLeaders = allLeaders.slice(0,5);
             
             let leadHtml = sortedLeaders.map((ld, i) => {
-                let isMe = ld.name === d.name;
+                let isMe = ld.id === d.id;
                 return `
                 <div style="padding: 12px 15px; border: 1px solid ${isMe?'var(--primary)':'var(--border)'}; border-radius: 8px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; background: ${isMe?'var(--primary-light)':'var(--white)'};">
                     <div style="font-size: 1.5rem; font-weight: 700; color: ${i===0?'var(--primary)':'var(--text-muted)'};">#${i+1}</div>
                     <div style="flex:1;">
                         <div style="font-weight: 600; color: ${isMe?'var(--primary)':'var(--black)'};">${ld.name} ${isMe?'(Akun Anda)':''}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">${ld.count} Transaksi Terselesaikan</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${ld.count} handle - ${formatIDR(ld.omset)} omset jasa</div>
                     </div>
                 </div>`;
             }).join('');
