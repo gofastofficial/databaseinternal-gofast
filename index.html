@@ -356,12 +356,22 @@
                         <div id="order-wallet-status" class="wallet-alert hidden"></div>
                         <div class="form-group"><label>Layanan GoFast</label>
                             <select id="trxService" required>
-                                <option value="GoFast Ride">GoFast Ride</option>
-                                <option value="Fastcar Private">Fastcar Private (Setiap Hari)</option>
-                                <option value="Fastcar Travel">Fastcar Travel (Weekend Only)</option>
-                                <option value="RA Food">RA Food Delivery</option>
-                                <option value="GoFast Courier">GoFast Courier</option>
+                                <option value="Fast Delivery (makanan/barang)">Fast Delivery (makanan/barang)</option>
+                                <option value="Fast Kurir (paket/dokumen)">Fast Kurir (paket/dokumen)</option>
+                                <option value="Fast Ride (ojek motor)">Fast Ride (ojek motor)</option>
+                                <option value="Fast Car (mobil/taksi)">Fast Car (mobil/taksi)</option>
+                                <option value="Fastcar Travel (antar kota)">Fastcar Travel (antar kota)</option>
+                                <option value="Fast Express (1 hari sampai)">Fast Express (1 hari sampai)</option>
+                                <option value="Fast Mart (belanja mart/pasar)">Fast Mart (belanja mart/pasar)</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nama Konsumen</label>
+                            <input type="text" id="trxCustomer" required placeholder="Contoh: Budi Santoso">
+                        </div>
+                        <div class="form-group">
+                            <label>Jam Eksekusi</label>
+                            <input type="time" id="trxExecutionTime" required>
                         </div>
                         <div class="form-group">
                             <label>Nominal Jasa Order (Rp)</label>
@@ -744,11 +754,17 @@
             e.preventDefault();
             const id = document.getElementById('trxDriver').value;
             const srv = document.getElementById('trxService').value;
+            const customerName = document.getElementById('trxCustomer').value.trim();
+            const executionTime = document.getElementById('trxExecutionTime').value;
             const amt = parseFloat(document.getElementById('trxAmount').value);
             const fee = amt * 0.15;
             
             const d = appData.drivers.find(x => x.id === id);
             if (!d) return;
+            if (!customerName || !executionTime || !amt || amt <= 0) {
+                alert("Lengkapi nama konsumen, jam eksekusi, dan nominal order dengan benar.");
+                return;
+            }
 
             const status = getDriverWalletStatus(d);
             if (status.level === 'danger') {
@@ -785,11 +801,16 @@
             appData.transactions.unshift({
                 id: 'ORD-' + Date.now(), date: new Date().toISOString(), type: 'ORDER',
                 driverId: d.id, driverName: d.name, amount: amt, fee: fee,
-                desc: `${d.name} | ${srv} | ${infoMsg}`
+                customerName: customerName,
+                executionTime: executionTime,
+                desc: `${d.name} | ${srv} | Konsumen: ${customerName} | Jam Eksekusi: ${executionTime} | ${infoMsg}`
             });
 
-            document.getElementById('trxAmount').value = ""; document.getElementById('preview-fee').innerText = "Rp 0";
-            saveState(); alert(`Order Terproses! Detail: ${infoMsg}`);
+            document.getElementById('trxCustomer').value = "";
+            document.getElementById('trxExecutionTime').value = "";
+            document.getElementById('trxAmount').value = "";
+            document.getElementById('preview-fee').innerText = "Rp 0";
+            saveState(); alert(`Order Terproses! Konsumen: ${customerName} | Jam Eksekusi: ${executionTime} | Detail: ${infoMsg}`);
         }
 
         // --- DRIVER PORTAL RENDERING (PREMIUM & FILTER) ---
