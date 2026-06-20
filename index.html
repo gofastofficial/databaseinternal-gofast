@@ -120,6 +120,13 @@
         .badge-success { background: var(--primary-light); color: var(--primary); }
         .badge-danger { background: var(--danger-bg); color: var(--danger); }
         .badge-info { background: var(--info-bg); color: var(--info); }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+
+        .wallet-alert { padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; line-height: 1.4; }
+        .wallet-alert.success { background: var(--primary-light); border-color: #86efac; color: var(--primary); }
+        .wallet-alert.warning { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+        .wallet-alert.danger { background: var(--danger-bg); border-color: #fecaca; color: var(--danger); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
         /* MODAL */
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.7); z-index:999; justify-content: center; align-items: center; padding: 20px;}
@@ -210,6 +217,28 @@
                     </div>
                 </div>
 
+                <div id="dp-wallet-alert" class="wallet-alert hidden"></div>
+
+                <div class="panel" style="padding: 0;">
+                    <h2 style="padding: 1.5rem 1.5rem 1rem; margin: 0; border: none;">All Driver Monitor</h2>
+                    <div class="table-wrapper" style="border: none; border-top: 1px solid var(--border); border-radius: 0;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Driver</th>
+                                    <th class="text-center">Handle</th>
+                                    <th class="text-right">Omset Periode</th>
+                                    <th class="text-right">Omset Hari Ini</th>
+                                    <th class="text-right">Sisa Saldo</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dp-all-drivers"></tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="grid-2">
                     <div class="panel" style="padding: 0; display: flex; flex-direction: column;">
                         <h2 style="padding: 1.5rem 1.5rem 1rem; margin: 0; border: none;">Peringkat Performa Driver</h2>
@@ -276,7 +305,7 @@
                 </div>
 
                 <div class="panel">
-                    <h2>Leaderboard Top Driver</h2>
+                    <h2>All Driver Monitor & Alert Saldo</h2>
                     <div id="top-drivers" style="display: flex; flex-direction: column; gap: 10px;"></div>
                 </div>
             </div>
@@ -321,9 +350,10 @@
                 <h1 style="font-size: 1.8rem; color: var(--black); margin-bottom: 2rem;">Order Entry System</h1>
                 <div class="panel" style="max-width: 600px; margin: 0 auto;">
                     <h2>Form Proses Order Jasa</h2>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Sistem akan otomatis memotong biaya Admin 15% dari Saldo Wallet Driver. Jika saldo kosong atau kurang, sisanya akan menjadi Hutang.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Sistem akan otomatis memotong biaya Admin 15% dari Saldo Wallet Driver. Jika saldo di bawah Rp5.000 driver wajib top up, dan saldo Rp2.000 ke bawah tidak bisa handle orderan.</p>
                     <form onsubmit="processOrder(event)">
-                        <div class="form-group"><label>Identitas Driver</label><select id="trxDriver" required></select></div>
+                        <div class="form-group"><label>Identitas Driver</label><select id="trxDriver" required onchange="updateOrderDriverStatus()"></select></div>
+                        <div id="order-wallet-status" class="wallet-alert hidden"></div>
                         <div class="form-group"><label>Layanan GoFast</label>
                             <select id="trxService" required>
                                 <option value="GoFast Ride">GoFast Ride</option>
@@ -335,13 +365,13 @@
                         </div>
                         <div class="form-group">
                             <label>Nominal Jasa Order (Rp)</label>
-                            <input type="number" id="trxAmount" required placeholder="Contoh: 50000" onkeyup="previewFee()">
+                            <input type="number" id="trxAmount" required placeholder="Contoh: 50000" oninput="previewFee()">
                             <div style="margin-top: 8px; padding: 12px; background: var(--bg-body); border-radius: 8px; display: flex; justify-content: space-between;">
                                 <span style="font-size: 0.85rem; color: var(--text-muted);">Estimasi Potongan Admin 15%:</span>
                                 <strong id="preview-fee" class="text-danger">Rp 0</strong>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-black" style="width: 100%;">Eksekusi Order Jasa</button>
+                        <button type="submit" id="order-submit-btn" class="btn btn-black" style="width: 100%;">Eksekusi Order Jasa</button>
                     </form>
                 </div>
             </div>
@@ -372,6 +402,7 @@
                                     <th class="text-right">Omset Kotor</th>
                                     <th class="text-right" style="color: var(--info);">Sisa Saldo Wallet</th>
                                     <th class="text-right" style="color: var(--danger);">Hutang Aktif Admin</th>
+                                    <th>Status Saldo</th>
                                     <th class="text-right">Aksi Manajemen</th>
                                 </tr>
                             </thead>
@@ -492,6 +523,8 @@
         if (!appData) { appData = { drivers: defaultDrivers, transactions: [] }; }
         
         const TARGET_OMSET = 4000000;
+        const TOPUP_ALERT_LIMIT = 5000;
+        const ORDER_BLOCK_LIMIT = 2000;
         const ADMIN_PIN = "4424";
 
         function saveState() {
@@ -501,6 +534,47 @@
 
         const formatIDR = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num || 0);
         const formatDate = (isoStr) => new Date(isoStr).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+        function getDriverWalletStatus(driver) {
+            const balance = driver ? (driver.walletBalance || 0) : 0;
+            if (balance <= ORDER_BLOCK_LIMIT) {
+                return {
+                    level: 'danger',
+                    badge: 'badge-danger',
+                    label: 'BLOKIR ORDER',
+                    message: `Saldo ${formatIDR(balance)}. Tidak bisa handle orderan sampai top up melewati ${formatIDR(ORDER_BLOCK_LIMIT)}.`
+                };
+            }
+            if (balance < TOPUP_ALERT_LIMIT) {
+                return {
+                    level: 'warning',
+                    badge: 'badge-warning',
+                    label: 'WAJIB TOP UP',
+                    message: `Saldo ${formatIDR(balance)} di bawah ${formatIDR(TOPUP_ALERT_LIMIT)}. Driver wajib top up.`
+                };
+            }
+            return {
+                level: 'success',
+                badge: 'badge-success',
+                label: 'AMAN HANDLE',
+                message: `Saldo ${formatIDR(balance)} aman untuk handle orderan.`
+            };
+        }
+
+        function renderWalletStatusBadge(driver) {
+            const status = getDriverWalletStatus(driver);
+            return `<span class="badge ${status.badge}">${status.label}</span>`;
+        }
+
+        function getTodayPeriod() {
+            const now = new Date();
+            return {
+                filter: 'today',
+                start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+                end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+                label: 'Khusus hari ini'
+            };
+        }
 
         function parseDateInput(value, endOfDay = false) {
             if (!value) return null;
@@ -599,10 +673,15 @@
 
         function updateAllViews() {
             const optDriver = `<option value="" disabled selected>-- Pilih Identitas Akun --</option>` + 
-                              appData.drivers.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+                              appData.drivers.map(d => {
+                                  const status = getDriverWalletStatus(d);
+                                  const statusLabel = status.level === 'success' ? '' : ` - ${status.label}`;
+                                  return `<option value="${d.id}">${d.name}${statusLabel}</option>`;
+                              }).join('');
             document.getElementById('driverSelect').innerHTML = optDriver;
             document.getElementById('trxDriver').innerHTML = optDriver;
             document.getElementById('topupDriver').innerHTML = optDriver;
+            updateOrderDriverStatus();
 
             if (!document.getElementById('driver-view').classList.contains('hidden')) renderDriverPortal();
             if (!document.getElementById('admin-view').classList.contains('hidden')) {
@@ -614,6 +693,32 @@
         function previewFee() {
             const val = parseFloat(document.getElementById('trxAmount').value) || 0;
             document.getElementById('preview-fee').innerText = formatIDR(val * 0.15);
+        }
+
+        function updateOrderDriverStatus() {
+            const statusBox = document.getElementById('order-wallet-status');
+            const submitBtn = document.getElementById('order-submit-btn');
+            const driverSelect = document.getElementById('trxDriver');
+            if (!statusBox || !driverSelect) return;
+
+            const d = appData.drivers.find(x => x.id === driverSelect.value);
+            if (!d) {
+                statusBox.className = 'wallet-alert hidden';
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.title = '';
+                }
+                return;
+            }
+
+            const status = getDriverWalletStatus(d);
+            statusBox.className = `wallet-alert ${status.level}`;
+            statusBox.innerHTML = `${renderWalletStatusBadge(d)} ${d.name}: ${status.message}`;
+
+            if (submitBtn) {
+                submitBtn.disabled = status.level === 'danger';
+                submitBtn.title = status.level === 'danger' ? 'Driver wajib top up sebelum bisa handle orderan.' : '';
+            }
         }
 
         function processTopUp(e) {
@@ -644,6 +749,16 @@
             
             const d = appData.drivers.find(x => x.id === id);
             if (!d) return;
+
+            const status = getDriverWalletStatus(d);
+            if (status.level === 'danger') {
+                alert(`${d.name} tidak bisa handle orderan. ${status.message}`);
+                updateOrderDriverStatus();
+                return;
+            }
+            if (status.level === 'warning') {
+                alert(`${d.name}: ${status.message}`);
+            }
 
             d.totalOrderCount = (d.totalOrderCount || 0) + 1;
             d.totalOmsetKotor = (d.totalOmsetKotor || 0) + amt;
@@ -693,9 +808,16 @@
             document.getElementById('dp-hutang').innerText = formatIDR(d.hutangAktif || 0);
             document.getElementById('dp-wallet-total').innerText = formatIDR(appData.drivers.reduce((sum, drv) => sum + (drv.walletBalance || 0), 0));
 
+            const driverStatus = getDriverWalletStatus(d);
+            const walletAlert = document.getElementById('dp-wallet-alert');
+            walletAlert.className = `wallet-alert ${driverStatus.level}`;
+            walletAlert.innerHTML = `${renderWalletStatusBadge(d)} ${d.name}: ${driverStatus.message}`;
+
             // Filter Histori
             let myTrx = appData.transactions.filter(t => t.driverId === id);
             let allOrderTrx = appData.transactions.filter(t => t.type === 'ORDER');
+            const todayPeriod = getTodayPeriod();
+            const todayOrderTrx = appData.transactions.filter(t => t.type === 'ORDER' && isTransactionInPeriod(t, todayPeriod));
 
             if (!isAllPeriod) {
                 myTrx = myTrx.filter(t => isTransactionInPeriod(t, period));
@@ -727,8 +849,11 @@
                 leaderStats[drv.id] = {
                     id: drv.id,
                     name: drv.name,
+                    driver: drv,
                     count: isAllPeriod ? (drv.totalOrderCount || 0) : 0,
-                    omset: isAllPeriod ? (drv.totalOmsetKotor || 0) : 0
+                    omset: isAllPeriod ? (drv.totalOmsetKotor || 0) : 0,
+                    todayCount: 0,
+                    todayOmset: 0
                 };
             });
             if (!isAllPeriod) {
@@ -739,7 +864,13 @@
                     }
                 });
             }
-            const allLeaders = Object.values(leaderStats).sort((a,b) => (b.count - a.count) || (b.omset - a.omset) || a.name.localeCompare(b.name));
+            todayOrderTrx.forEach(t => {
+                if(leaderStats[t.driverId]) {
+                    leaderStats[t.driverId].todayCount++;
+                    leaderStats[t.driverId].todayOmset += (t.amount || 0);
+                }
+            });
+            const allLeaders = Object.values(leaderStats).sort((a,b) => (b.count - a.count) || (b.omset - a.omset) || (b.todayOmset - a.todayOmset) || a.name.localeCompare(b.name));
             const myRank = allLeaders.findIndex(ld => ld.id === d.id);
             document.getElementById('dp-rank').innerText = myRank >= 0 ? `#${myRank + 1}` : '#-';
             document.getElementById('dp-rank-label').innerText = `${filteredOrderCount} handle - ${period.label}`;
@@ -752,10 +883,24 @@
                     <div style="font-size: 1.5rem; font-weight: 700; color: ${i===0?'var(--primary)':'var(--text-muted)'};">#${i+1}</div>
                     <div style="flex:1;">
                         <div style="font-weight: 600; color: ${isMe?'var(--primary)':'var(--black)'};">${ld.name} ${isMe?'(Akun Anda)':''}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">${ld.count} handle - ${formatIDR(ld.omset)} omset jasa</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${ld.count} handle - ${formatIDR(ld.omset)} omset jasa - Saldo ${formatIDR(ld.driver.walletBalance || 0)}</div>
                     </div>
                 </div>`;
             }).join('');
+            const allDriverHtml = allLeaders.map((ld, i) => {
+                const status = getDriverWalletStatus(ld.driver);
+                const rowStyle = status.level === 'danger' ? 'background: var(--danger-bg);' : (status.level === 'warning' ? 'background: #fffbeb;' : '');
+                return `<tr style="${rowStyle}">
+                    <td class="fw-bold">#${i + 1}</td>
+                    <td class="fw-bold" style="color: var(--black);">${ld.name}</td>
+                    <td class="text-center">${ld.count}</td>
+                    <td class="text-right fw-bold">${formatIDR(ld.omset)}</td>
+                    <td class="text-right fw-bold text-success">${formatIDR(ld.todayOmset)}</td>
+                    <td class="text-right fw-bold ${status.level === 'danger' ? 'text-danger' : 'text-info'}">${formatIDR(ld.driver.walletBalance || 0)}</td>
+                    <td>${renderWalletStatusBadge(ld.driver)}</td>
+                </tr>`;
+            }).join('');
+            document.getElementById('dp-all-drivers').innerHTML = allDriverHtml || `<tr><td colspan="7" class="text-center" style="padding: 2rem; color: var(--text-muted);">Belum ada data driver.</td></tr>`;
             document.getElementById('dp-leaderboard').innerHTML = leadHtml || '<div class="text-center" style="padding: 2rem; color: var(--text-muted);">Belum ada data pada periode ini</div>';
         }
 
@@ -777,8 +922,24 @@
             document.getElementById('dash-jasa').innerText = formatIDR(js);
             document.getElementById('dash-admin').innerText = formatIDR(adm);
 
-            const top = [...appData.drivers].sort((a,b)=>(b.totalOrderCount||0) - (a.totalOrderCount||0)).slice(0,3);
-            document.getElementById('top-drivers').innerHTML = top.map((d,i)=>`<div style="padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 15px;"><div style="font-size: 1.5rem; font-weight: 700; color: ${i===0?'var(--primary)':'#cbd5e1'};">#${i+1}</div><div><div style="font-weight: 600;">${d.name}</div><div style="font-size: 0.8rem; color: var(--text-muted);">${d.totalOrderCount || 0} Transaksi Diselesaikan</div></div></div>`).join('');
+            let dashboardOrderTrx = appData.transactions.filter(t => t.type === 'ORDER');
+            if (filter === 'today') dashboardOrderTrx = dashboardOrderTrx.filter(t => new Date(t.date).toDateString() === now.toDateString());
+            else if (filter === 'this_month') dashboardOrderTrx = dashboardOrderTrx.filter(t => { let d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+
+            const top = appData.drivers.map(d => {
+                const driverTrx = filter === 'all' ? [] : dashboardOrderTrx.filter(t => t.driverId === d.id);
+                return {
+                    driver: d,
+                    count: filter === 'all' ? (d.totalOrderCount || 0) : driverTrx.length,
+                    omset: filter === 'all' ? (d.totalOmsetKotor || 0) : driverTrx.reduce((sum, t) => sum + (t.amount || 0), 0)
+                };
+            }).sort((a,b)=>(b.count - a.count) || (b.omset - a.omset) || a.driver.name.localeCompare(b.driver.name));
+            document.getElementById('top-drivers').innerHTML = top.map((row,i)=>{
+                const d = row.driver;
+                const status = getDriverWalletStatus(d);
+                const bg = status.level === 'danger' ? 'var(--danger-bg)' : (status.level === 'warning' ? '#fffbeb' : 'var(--white)');
+                return `<div style="padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; display: grid; grid-template-columns: 55px 1fr auto; align-items: center; gap: 15px; background: ${bg};"><div style="font-size: 1.5rem; font-weight: 700; color: ${i===0?'var(--primary)':'#cbd5e1'};">#${i+1}</div><div><div style="font-weight: 600;">${d.name}</div><div style="font-size: 0.8rem; color: var(--text-muted);">${row.count} handle - ${formatIDR(row.omset)} omset - saldo ${formatIDR(d.walletBalance || 0)}</div></div><div>${renderWalletStatusBadge(d)}</div></div>`;
+            }).join('') || '<div class="text-center" style="padding: 2rem; color: var(--text-muted);">Belum ada data driver.</div>';
         }
 
         function renderWalletDash() {
@@ -799,12 +960,15 @@
         function renderDriversAdmin() {
             let html = '';
             appData.drivers.forEach(d => {
-                html += `<tr>
+                const status = getDriverWalletStatus(d);
+                const rowStyle = status.level === 'danger' ? ' style="background: var(--danger-bg);"' : (status.level === 'warning' ? ' style="background: #fffbeb;"' : '');
+                html += `<tr${rowStyle}>
                     <td class="fw-bold" style="color: var(--black);">${d.name}</td>
                     <td class="text-center">${d.totalOrderCount || 0}</td>
                     <td class="text-right">${formatIDR(d.totalOmsetKotor || 0)}</td>
-                    <td class="text-right fw-bold text-info">${formatIDR(d.walletBalance || 0)}</td>
+                    <td class="text-right fw-bold ${status.level === 'danger' ? 'text-danger' : 'text-info'}">${formatIDR(d.walletBalance || 0)}</td>
                     <td class="text-right fw-bold text-danger">${formatIDR(d.hutangAktif || 0)}</td>
+                    <td>${renderWalletStatusBadge(d)}</td>
                     <td class="text-right">
                         <button class="btn btn-outline btn-sm" onclick="openManualPay('${d.id}')">Pelunasan Hutang</button>
                         <button class="btn btn-primary btn-sm" onclick="openEdit('${d.id}')">Edit</button>
