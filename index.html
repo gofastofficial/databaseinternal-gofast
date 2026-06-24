@@ -280,13 +280,25 @@
 
         <main>
             <div id="tab-dashboard" class="container active">
-                <div class="flex-between" style="margin-bottom: 2rem;">
-                    <h1 style="font-size: 1.8rem; color: var(--black);">Dashboard Premium</h1>
-                    <select id="dashFilter" onchange="renderDashboard()" style="width: auto; font-weight: 600; padding: 0.6rem 1rem;">
-                        <option value="all">Semua Waktu (All Time)</option>
-                        <option value="today">Khusus Hari Ini</option>
-                        <option value="this_month">Khusus Bulan Ini</option>
-                    </select>
+                <div class="flex-between" style="margin-bottom: 2rem; flex-wrap: wrap; gap: 10px;">
+                    <h1 style="font-size: 1.8rem; color: var(--black); margin: 0;">Dashboard Premium</h1>
+                    
+                    <!-- NEW: Admin Date Filter Section -->
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <select id="dashFilter" onchange="toggleAdminCustomDate(); renderDashboard();" style="width: auto; font-weight: 600; padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <option value="all">Semua Waktu (All Time)</option>
+                            <option value="today">Khusus Hari Ini</option>
+                            <option value="this_month">Khusus Bulan Ini</option>
+                            <option value="custom">Tanggal Manual</option>
+                        </select>
+                        
+                        <div id="admin-custom-date" style="display: none; gap: 8px; align-items: center;">
+                            <input type="date" id="dash-start-date" onchange="setAdminCustomDate()" style="padding: 0.5rem; width: auto; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem;">
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">s/d</span>
+                            <input type="date" id="dash-end-date" onchange="setAdminCustomDate()" style="padding: 0.5rem; width: auto; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem;">
+                            <button class="btn btn-outline btn-sm" onclick="resetAdminDate()" style="padding: 0.5rem 0.8rem;">Reset</button>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="grid-3">
@@ -650,6 +662,30 @@
             renderDriverPortal();
         }
 
+        // --- NEW: FUNGSI FILTER ADMIN ---
+        function toggleAdminCustomDate() {
+            const filter = document.getElementById('dashFilter').value;
+            const customDateBox = document.getElementById('admin-custom-date');
+            if (filter === 'custom') {
+                customDateBox.style.display = 'flex';
+            } else {
+                customDateBox.style.display = 'none';
+            }
+        }
+
+        function setAdminCustomDate() {
+            document.getElementById('dashFilter').value = 'custom';
+            renderDashboard();
+        }
+
+        function resetAdminDate() {
+            document.getElementById('dash-start-date').value = '';
+            document.getElementById('dash-end-date').value = '';
+            document.getElementById('dashFilter').value = 'all';
+            toggleAdminCustomDate();
+            renderDashboard();
+        }
+
         // --- GATEWAY & NAVIGATION ---
         function login(role) {
             if (role === 'admin') {
@@ -695,6 +731,7 @@
 
             if (!document.getElementById('driver-view').classList.contains('hidden')) renderDriverPortal();
             if (!document.getElementById('admin-view').classList.contains('hidden')) {
+                toggleAdminCustomDate(); // Ensure UI syncs
                 renderDashboard(); renderWalletDash(); renderDriversAdmin(); renderFinanceAdmin(); renderHistoryAdmin();
             }
         }
@@ -930,22 +967,54 @@
             const filter = document.getElementById('dashFilter').value;
             const now = new Date();
             let ord=0, js=0, adm=0;
+            
+            // Custom date setup
+            let startCustom = null, endCustom = null;
+            if (filter === 'custom') {
+                startCustom = parseDateInput(document.getElementById('dash-start-date').value);
+                endCustom = parseDateInput(document.getElementById('dash-end-date').value, true);
+            }
 
             if (filter === 'all') {
                 appData.drivers.forEach(d => { ord += (d.totalOrderCount || 0); js += (d.totalOmsetKotor || 0); adm += (d.totalAdminBilled || 0); });
             } else {
                 let fTrx = appData.transactions.filter(t => t.type === 'ORDER');
-                if (filter === 'today') fTrx = fTrx.filter(t => new Date(t.date).toDateString() === now.toDateString());
-                else if (filter === 'this_month') fTrx = fTrx.filter(t => { let d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+                
+                if (filter === 'today') {
+                    fTrx = fTrx.filter(t => new Date(t.date).toDateString() === now.toDateString());
+                } else if (filter === 'this_month') {
+                    fTrx = fTrx.filter(t => { let d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+                } else if (filter === 'custom') {
+                    fTrx = fTrx.filter(t => {
+                        const trxDate = new Date(t.date);
+                        if (isNaN(trxDate.getTime())) return false;
+                        if (startCustom && trxDate < startCustom) return false;
+                        if (endCustom && trxDate > endCustom) return false;
+                        return true;
+                    });
+                }
+                
                 fTrx.forEach(t => { ord += 1; js += (t.amount || 0); adm += (t.fee || 0); });
             }
             document.getElementById('dash-order').innerText = ord;
             document.getElementById('dash-jasa').innerText = formatIDR(js);
             document.getElementById('dash-admin').innerText = formatIDR(adm);
 
+            // Filter transaksi order saja untuk leaderboard
             let dashboardOrderTrx = appData.transactions.filter(t => t.type === 'ORDER');
-            if (filter === 'today') dashboardOrderTrx = dashboardOrderTrx.filter(t => new Date(t.date).toDateString() === now.toDateString());
-            else if (filter === 'this_month') dashboardOrderTrx = dashboardOrderTrx.filter(t => { let d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+            if (filter === 'today') {
+                dashboardOrderTrx = dashboardOrderTrx.filter(t => new Date(t.date).toDateString() === now.toDateString());
+            } else if (filter === 'this_month') {
+                dashboardOrderTrx = dashboardOrderTrx.filter(t => { let d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+            } else if (filter === 'custom') {
+                dashboardOrderTrx = dashboardOrderTrx.filter(t => {
+                    const trxDate = new Date(t.date);
+                    if (isNaN(trxDate.getTime())) return false;
+                    if (startCustom && trxDate < startCustom) return false;
+                    if (endCustom && trxDate > endCustom) return false;
+                    return true;
+                });
+            }
 
             const top = appData.drivers.map(d => {
                 const driverTrx = filter === 'all' ? [] : dashboardOrderTrx.filter(t => t.driverId === d.id);
@@ -955,6 +1024,7 @@
                     omset: filter === 'all' ? (d.totalOmsetKotor || 0) : driverTrx.reduce((sum, t) => sum + (t.amount || 0), 0)
                 };
             }).sort((a,b)=>(b.count - a.count) || (b.omset - a.omset) || a.driver.name.localeCompare(b.driver.name));
+            
             document.getElementById('top-drivers').innerHTML = top.map((row,i)=>{
                 const d = row.driver;
                 const status = getDriverWalletStatus(d);
